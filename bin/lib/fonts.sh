@@ -95,6 +95,18 @@ _install_fonts() {
 
     [[ -z "$url" ]] && { log_warn "${family}/source.json 에 url 이 없습니다."; continue; }
 
+    # state 기록이 있고 모든 파일이 실제로 존재하면 다운로드 건너뜀
+    local _installed=0 _missing=0
+    while IFS=$'\t' read -r _t _a _n _d _m _b _ts; do
+      [[ "$_t" =~ ^# || -z "$_t" ]] && continue
+      ((_installed++)) || true
+      [[ -f "$_d" ]] || _missing=1
+    done < <(state_query "fonts" "_" 2>/dev/null | grep -e "	${family}/" || true)
+    if [[ "$_installed" -gt 0 && "$_missing" -eq 0 ]]; then
+      log_skip "${family}: 모든 폰트가 이미 설치되어 있습니다."
+      continue
+    fi
+
     if is_dry; then
       log_dry "${family}: would download ${url} → ${dest_dir}/"
       continue
