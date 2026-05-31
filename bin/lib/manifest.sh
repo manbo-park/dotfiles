@@ -3,34 +3,67 @@
 #
 # 의존: common.sh, targets.sh (REPO_ROOT 필요)
 
+# ── .pcfgignore 로드 ─────────────────────────────────────────────────────────
+# _load_ignore <type>  → 제외 아이템 이름 배열을 _IGNORE_NAMES 에 저장
+_load_ignore() {
+  _IGNORE_NAMES=()
+  local ignore_file="${REPO_ROOT}/agents/${1}/.pcfgignore"
+  [[ -f "$ignore_file" ]] || return 0
+  while IFS= read -r line; do
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    _IGNORE_NAMES+=("$line")
+  done < "$ignore_file"
+}
+
+_is_ignored() {
+  local name="$1"
+  local entry
+  for entry in "${_IGNORE_NAMES[@]+"${_IGNORE_NAMES[@]}"}"; do
+    [[ "$entry" == "$name" ]] && return 0
+  done
+  return 1
+}
+
 # ── agents 아이템 열거 ────────────────────────────────────────────────────────
-# list_agent_items <type>  → 이름 목록 (한 줄에 하나)
+# list_agent_items <type>  → 이름 목록 (한 줄에 하나, .pcfgignore 제외)
 list_agent_items() {
   local type="$1"
   local dir="${REPO_ROOT}/agents/${type}"
   [[ -d "$dir" ]] || return 0
 
+  _load_ignore "$type"
+
+  local raw_names=()
   case "$type" in
     rules)
-      find "$dir" -maxdepth 1 -name '*.md' -not -name '.gitkeep' \
-        | sort | xargs -I{} basename {} .md
+      while IFS= read -r f; do
+        raw_names+=("$(basename "$f" .md)")
+      done < <(find "$dir" -maxdepth 1 -name '*.md' -not -name '.gitkeep' | sort)
       ;;
-    skills)
-      find "$dir" -maxdepth 1 -mindepth 1 -type d \
-        | sort | xargs -I{} basename {}
-      ;;
-    hooks)
-      find "$dir" -maxdepth 1 -mindepth 1 -type d \
-        | sort | xargs -I{} basename {}
+    skills|hooks)
+      while IFS= read -r f; do
+        raw_names+=("$(basename "$f")")
+      done < <(find "$dir" -maxdepth 1 -mindepth 1 -type d | sort)
       ;;
     mcps)
-      find "$dir" -maxdepth 1 -name '*.json' -not -name '.gitkeep' \
-        | sort | xargs -I{} basename {} .json
+      while IFS= read -r f; do
+        raw_names+=("$(basename "$f" .json)")
+      done < <(find "$dir" -maxdepth 1 -name '*.json' -not -name '.gitkeep' | sort)
       ;;
     *)
       log_warn "알 수 없는 type: ${type}"
+      return 0
       ;;
   esac
+
+  local name
+  for name in "${raw_names[@]+"${raw_names[@]}"}"; do
+    if _is_ignored "$name"; then
+      log_skip "${type}/${name} — .pcfgignore 에 의해 제외됨"
+    else
+      printf '%s\n' "$name"
+    fi
+  done
 }
 
 # ── configs 아이템 열거 ───────────────────────────────────────────────────────
