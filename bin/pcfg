@@ -1,0 +1,439 @@
+#!/usr/bin/env bash
+# bin/pcfg — personal-config 단일 진입 CLI
+#
+# 사용법:
+#   pcfg install   [<type>] [<name>] [--agent <agent>] [--force] [--dry-run]
+#   pcfg uninstall [<type>] [<name>] [--agent <agent>] [--restore] [--prune] [--dry-run]
+#   pcfg list      [<type>] [--agent <agent>]
+#   pcfg status
+#   pcfg rename    <type> <old> <new>
+#   pcfg doctor    [--prune]
+
+set -euo pipefail
+
+# ── REPO_ROOT 산출 ────────────────────────────────────────────────────────────
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export REPO_ROOT
+
+# ── 라이브러리 로드 ───────────────────────────────────────────────────────────
+LIB="${REPO_ROOT}/bin/lib"
+# shellcheck source=bin/lib/common.sh
+source "${LIB}/common.sh"
+# shellcheck source=bin/lib/targets.sh
+source "${LIB}/targets.sh"
+# shellcheck source=bin/lib/manifest.sh
+source "${LIB}/manifest.sh"
+# shellcheck source=bin/lib/state.sh
+source "${LIB}/state.sh"
+# shellcheck source=bin/lib/symlink.sh
+source "${LIB}/symlink.sh"
+# shellcheck source=bin/lib/convert.sh
+source "${LIB}/convert.sh"
+# shellcheck source=bin/lib/merge.sh
+source "${LIB}/merge.sh"
+
+# ── 공통 인자 파싱 헬퍼 ──────────────────────────────────────────────────────
+_parse_common_flags() {
+  OPT_AGENT="all"
+  OPT_FORCE=0
+  OPT_RESTORE=0
+  OPT_PRUNE=0
+  REMAINING_ARGS=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --dry-run)   PCFG_DRY_RUN=1; shift ;;
+      --agent)     OPT_AGENT="${2:-all}"; shift 2 ;;
+      --agent=*)   OPT_AGENT="${1#*=}"; shift ;;
+      --force)     OPT_FORCE=1; shift ;;
+      --restore)   OPT_RESTORE=1; shift ;;
+      --prune)     OPT_PRUNE=1; shift ;;
+      *)           REMAINING_ARGS+=("$1"); shift ;;
+    esac
+  done
+}
+
+# ── type 목록 ─────────────────────────────────────────────────────────────────
+ALL_AGENT_TYPES="rules skills hooks mcps"
+ALL_TYPES="${ALL_AGENT_TYPES} configs"
+
+_expand_type() {
+  local t="$1"
+  if [[ "$t" == "all" || -z "$t" ]]; then
+    echo "$ALL_TYPES"
+  else
+    echo "$t"
+  fi
+}
+
+# ── install 서브커맨드 ────────────────────────────────────────────────────────
+cmd_install() {
+  _parse_common_flags "$@"
+  local type_arg="${REMAINING_ARGS[0]:-all}"
+  local name_arg="${REMAINING_ARGS[1]:-}"
+
+  check_deps
+
+  local types; types="$(_expand_type "$type_arg")"
+  for type in $types; do
+    if [[ "$type" == "configs" ]]; then
+      _install_configs "$name_arg"
+    else
+      _install_agent_type "$type" "$name_arg" "$OPT_AGENT"
+    fi
+  done
+}
+
+_install_agent_type() {
+  local type="$1" name_arg="$2" agent_arg="$3"
+  local names
+  if [[ -n "$name_arg" ]]; then
+    names="$name_arg"
+  else
+    names="$(list_agent_items "$type")"
+  fi
+
+  [[ -z "$names" ]] && { log_info "설치할 ${type} 아이템이 없습니다."; return; }
+
+  for name in $names; do
+    local agents; agents="$(resolve_agents "$type" "$agent_arg")"
+    [[ -z "$agents" ]] && continue
+    for agent in $agents; do
+      _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
+        _install_one "$type" "$agent" "$name"
+    done
+  done
+}
+
+_install_one() {
+  local type="$1" agent="$2" name="$3"
+  local mechanism; mechanism="$(target_mechanism "$type" "$agent")"
+  [[ -z "$mechanism" ]] && return
+
+  local src; src="$(source_path "$type" "$name")"
+  local dest; dest="$(target_dest "$type" "$agent" "$name")"
+
+  case "$mechanism" in
+    symlink)
+      symlink_install "$type" "$agent" "$name" "$src" "$dest"
+      ;;
+    convert)
+      convert_to_mdc "${src}.md" "$dest" "$name"
+      ;;
+    merge-section)
+      merge_agents_section "$dest" "${src}.md" "$name"
+      ;;
+    merge)
+      local top_key; top_key="$(target_merge_key "$type" "$agent")"
+      local frag="${src}.json"
+      _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
+        json_merge "$dest" "$top_key" "$name" "$frag"
+      ;;
+    merge-toml)
+      toml_merge_mcp "$dest" "$name" "${src}.json"
+      ;;
+    *)
+      log_warn "알 수 없는 mechanism: ${mechanism} (${type}/${agent}/${name})"
+      ;;
+  esac
+}
+
+_install_configs() {
+  local name_arg="$1"
+  local progs
+  if [[ -n "$name_arg" ]]; then
+    progs="$name_arg"
+  else
+    progs="$(list_config_items)"
+  fi
+
+  [[ -z "$progs" ]] && { log_info "설치할 configs 가 없습니다."; return; }
+
+  for prog in $progs; do
+    while IFS=$'\t' read -r abs_src dest; do
+      symlink_install "configs" "_" "$prog" "$abs_src" "$dest"
+    done < <(configs_pairs "$prog")
+  done
+}
+
+# ── uninstall 서브커맨드 ──────────────────────────────────────────────────────
+cmd_uninstall() {
+  _parse_common_flags "$@"
+  local type_arg="${REMAINING_ARGS[0]:-all}"
+  local name_arg="${REMAINING_ARGS[1]:-}"
+  local restore_flag=""; [[ "$OPT_RESTORE" == 1 ]] && restore_flag="--restore"
+
+  local types; types="$(_expand_type "$type_arg")"
+  for type in $types; do
+    if [[ "$type" == "configs" ]]; then
+      _uninstall_configs "$name_arg" "$restore_flag"
+    else
+      _uninstall_agent_type "$type" "$name_arg" "$OPT_AGENT" "$restore_flag"
+    fi
+  done
+
+  if [[ "$OPT_PRUNE" == 1 ]]; then
+    _prune_renames "$type_arg" "$OPT_AGENT" "$restore_flag"
+  fi
+}
+
+_uninstall_agent_type() {
+  local type="$1" name_arg="$2" agent_arg="$3" restore_flag="$4"
+  local names
+  if [[ -n "$name_arg" ]]; then
+    names="$name_arg"
+  else
+    names="$(list_agent_items "$type")"
+  fi
+
+  [[ -z "$names" ]] && return
+
+  for name in $names; do
+    local agents; agents="$(resolve_agents "$type" "$agent_arg")"
+    [[ -z "$agents" ]] && continue
+    for agent in $agents; do
+      _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
+        _uninstall_one "$type" "$agent" "$name" "$restore_flag"
+    done
+  done
+}
+
+_uninstall_one() {
+  local type="$1" agent="$2" name="$3" restore_flag="$4"
+  local mechanism; mechanism="$(target_mechanism "$type" "$agent")"
+  [[ -z "$mechanism" ]] && return
+
+  local dest; dest="$(target_dest "$type" "$agent" "$name")"
+
+  case "$mechanism" in
+    symlink)
+      symlink_uninstall "$type" "$agent" "$name" "$dest" "$restore_flag"
+      ;;
+    convert)
+      remove_mdc "$dest" "$name" "$restore_flag"
+      ;;
+    merge-section)
+      remove_agents_section "$dest" "$name"
+      ;;
+    merge)
+      local top_key; top_key="$(target_merge_key "$type" "$agent")"
+      _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
+        json_remove "$dest" "$top_key" "$name" "$restore_flag"
+      ;;
+    merge-toml)
+      toml_remove_mcp "$dest" "$name" "$restore_flag"
+      ;;
+    *)
+      log_warn "알 수 없는 mechanism: ${mechanism}"
+      ;;
+  esac
+}
+
+_uninstall_configs() {
+  local name_arg="$1" restore_flag="$2"
+  local progs
+  if [[ -n "$name_arg" ]]; then
+    progs="$name_arg"
+  else
+    progs="$(list_config_items)"
+  fi
+
+  [[ -z "$progs" ]] && return
+
+  for prog in $progs; do
+    local mf; mf="$(configs_manifest "$prog")"
+    [[ -f "$mf" ]] || continue
+    while IFS=$'\t' read -r abs_src dest; do
+      symlink_uninstall "configs" "_" "$prog" "$dest" "$restore_flag"
+    done < <(configs_pairs "$prog")
+  done
+}
+
+# ── prune (이름변경 잔재 제거) ────────────────────────────────────────────────
+_prune_renames() {
+  local type_filter="$1" agent_arg="$2" restore_flag="$3"
+
+  while IFS=$'\t' read -r rtype old_name _new _date _note; do
+    [[ -z "$rtype" ]] && continue
+    if [[ "$type_filter" != "all" && "$type_filter" != "$rtype" ]]; then
+      continue
+    fi
+
+    local agents; agents="$(resolve_agents "$rtype" "$agent_arg")"
+    [[ -z "$agents" ]] && continue
+
+    for agent in $agents; do
+      _CURRENT_TYPE="$rtype" _CURRENT_AGENT="$agent" \
+        _uninstall_one "$rtype" "$agent" "$old_name" "$restore_flag"
+    done
+  done < <(renames_query "${type_filter}" 2>/dev/null || true)
+}
+
+# ── list 서브커맨드 ───────────────────────────────────────────────────────────
+cmd_list() {
+  _parse_common_flags "$@"
+  local type_arg="${REMAINING_ARGS[0]:-all}"
+
+  local types; types="$(_expand_type "$type_arg")"
+  for type in $types; do
+    printf '\n%s=== %s ===%s\n' "$_BLD" "$type" "$_RST"
+    if [[ "$type" == "configs" ]]; then
+      list_config_items | while read -r prog; do
+        printf '  %s\n' "$prog"
+      done
+    else
+      list_agent_items "$type" | while read -r name; do
+        local agents; agents="$(resolve_agents "$type" "$OPT_AGENT")"
+        local row="  ${name}"
+        for agent in $agents; do
+          local dest; dest="$(target_dest "$type" "$agent" "$name")"
+          if _is_installed "$type" "$agent" "$name" "$dest"; then
+            row+="  ${_GRN}[${agent}:✓]${_RST}"
+          else
+            row+="  ${_RED}[${agent}:✗]${_RST}"
+          fi
+        done
+        printf '%b\n' "$row"
+      done
+    fi
+  done
+  printf '\n'
+}
+
+_is_installed() {
+  local type="$1" agent="$2" name="$3" dest="$4"
+  local mechanism; mechanism="$(target_mechanism "$type" "$agent")"
+  case "$mechanism" in
+    symlink)
+      [[ -L "$dest" && "$(readlink "$dest")" == "${REPO_ROOT}"* ]]
+      ;;
+    convert)
+      [[ -f "$dest" ]] && grep -q "$(pcfg_marker_begin "$name")" "$dest" 2>/dev/null
+      ;;
+    merge-section)
+      [[ -f "$dest" ]] && grep -qF "$(pcfg_marker_begin "$name")" "$dest" 2>/dev/null
+      ;;
+    merge|merge-toml)
+      state_query "$type" "$agent" "$name" 2>/dev/null | grep -q .
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+# ── status 서브커맨드 ─────────────────────────────────────────────────────────
+cmd_status() {
+  log_info "설치 상태 점검 중..."
+  local found=0
+  while IFS=$'\t' read -r type agent name dest mechanism backup ts; do
+    [[ "$type" =~ ^# || -z "$type" ]] && continue
+    case "$mechanism" in
+      symlink)
+        if [[ ! -L "$dest" || "$(readlink "$dest" 2>/dev/null)" != "${REPO_ROOT}"* ]]; then
+          log_warn "끊어진 symlink: ${dest} (${type}/${agent}/${name})"
+          ((found++)) || true
+        fi
+        ;;
+      convert|merge-section)
+        if [[ ! -f "$dest" ]]; then
+          log_warn "파일 없음: ${dest} (${type}/${agent}/${name})"
+          ((found++)) || true
+        fi
+        ;;
+    esac
+  done < <(state_list 2>/dev/null || true)
+
+  if [[ "$found" -eq 0 ]]; then
+    log_ok "모든 설치 항목이 정상입니다."
+  else
+    log_warn "${found}개 항목에 문제가 있습니다. 'pcfg doctor' 를 실행해 정리하세요."
+  fi
+}
+
+# ── rename 서브커맨드 ─────────────────────────────────────────────────────────
+cmd_rename() {
+  local type="${1:-}" old="${2:-}" new="${3:-}"
+  [[ -z "$type" || -z "$old" || -z "$new" ]] && \
+    die "사용법: pcfg rename <type> <old> <new>"
+
+  local old_path="${REPO_ROOT}/agents/${type}/${old}"
+  local new_path="${REPO_ROOT}/agents/${type}/${new}"
+
+  if [[ ! -e "$old_path" ]]; then
+    die "소스가 없습니다: ${old_path}"
+  fi
+
+  log_info "git mv ${old_path} → ${new_path}"
+  git -C "$REPO_ROOT" mv "$old_path" "$new_path"
+  renames_record "$type" "$old" "$new"
+  log_ok "이름 변경 완료. renames.tsv 에 기록되었습니다."
+  log_info "옛 설치 잔재를 정리하려면: pcfg uninstall ${type} ${old} --prune"
+  log_info "새 이름으로 재설치하려면:  pcfg install ${type} ${new}"
+}
+
+# ── doctor 서브커맨드 ─────────────────────────────────────────────────────────
+cmd_doctor() {
+  local prune=0
+  [[ "${1:-}" == "--prune" ]] && prune=1
+
+  log_info "doctor 점검 중..."
+  cmd_status
+
+  if [[ "$prune" == 1 ]]; then
+    log_info "lockfile 의 끊어진 항목을 정리합니다..."
+    local tmp; tmp="$(mktemp)"
+    # 헤더 보존
+    grep '^#' "$STATE_FILE" > "$tmp" 2>/dev/null || true
+    while IFS=$'\t' read -r type agent name dest mechanism backup ts; do
+      [[ "$type" =~ ^# || -z "$type" ]] && continue
+      local keep=1
+      case "$mechanism" in
+        symlink)
+          [[ -L "$dest" && "$(readlink "$dest" 2>/dev/null)" == "${REPO_ROOT}"* ]] || keep=0
+          ;;
+        convert|merge-section)
+          [[ -f "$dest" ]] || keep=0
+          ;;
+      esac
+      if [[ "$keep" == 1 ]]; then
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+          "$type" "$agent" "$name" "$dest" "$mechanism" "$backup" "$ts" >> "$tmp"
+      else
+        log_ok "lockfile 에서 제거: ${dest}"
+      fi
+    done < <(state_list 2>/dev/null || true)
+    mv "$tmp" "$STATE_FILE"
+    log_ok "doctor --prune 완료."
+  fi
+}
+
+# ── usage ─────────────────────────────────────────────────────────────────────
+usage() {
+  cat >&2 <<'EOF'
+사용법:
+  pcfg install   [<type>] [<name>] [--agent <claude|cursor|codex|all>] [--force] [--dry-run]
+  pcfg uninstall [<type>] [<name>] [--agent ...] [--restore] [--prune] [--dry-run]
+  pcfg list      [<type>] [--agent ...]
+  pcfg status
+  pcfg rename    <type> <old> <new>
+  pcfg doctor    [--prune]
+
+<type>: skills | rules | hooks | mcps | configs | all (생략=all)
+EOF
+  exit 1
+}
+
+# ── 진입점 ────────────────────────────────────────────────────────────────────
+SUBCOMMAND="${1:-}"
+shift || true
+
+case "$SUBCOMMAND" in
+  install)   cmd_install   "$@" ;;
+  uninstall) cmd_uninstall "$@" ;;
+  list)      cmd_list      "$@" ;;
+  status)    cmd_status    "$@" ;;
+  rename)    cmd_rename    "$@" ;;
+  doctor)    cmd_doctor    "$@" ;;
+  *)         usage ;;
+esac
