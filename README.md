@@ -144,6 +144,6 @@ tmux.conf        ~/.config/tmux/tmux.conf
 - **merge**: `jq` 로 해당 키만 삽입. 제거 시 그 키만 삭제.
 - **merge-section(rules-codex)**: `# >>> pcfg:<name> >>>` ~ `# <<< pcfg:<name> <<<` 마커 블록.
 - **merge-toml(mcps-codex)**: `[mcp_servers.<name>]` 섹션 삽입.
-- **font(fonts)**: zip 다운로드 후 패턴 매칭된 파일을 시스템 폰트 디렉토리에 복사.
+- **font(fonts)**: 이미 설치된 경우 no-op(멱등). 캐시된 zip이 있으면 재사용, 없으면 다운로드 후 패턴 매칭된 파일을 시스템 폰트 디렉토리에 복사.
 
 설치 상태는 `~/.local/state/personal-config/state.tsv` 에 기록됩니다.
