@@ -62,7 +62,7 @@ timestamp() { date +%Y%m%d%H%M%S; }
 backup_if_exists() {
   local dest="$1"
   if [[ -e "$dest" || -L "$dest" ]]; then
-    local bak="${dest}.pcfg-bak.$(timestamp)"
+    local bak; bak="${dest}.pcfg-bak.$(timestamp)"
     run_or_dry mv "$dest" "$bak"
     if ! is_dry; then
       echo "$bak"

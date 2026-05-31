@@ -35,7 +35,7 @@ symlink_install() {
     fi
   else
     log_dry "symlink: ${dest} → ${src}"
-    [[ -e "$dest" || -L "$dest" ]] && log_dry "  (기존 파일 백업 예정)"
+    if [[ -e "$dest" || -L "$dest" ]]; then log_dry "  (기존 파일 백업 예정)"; fi
   fi
 }
 

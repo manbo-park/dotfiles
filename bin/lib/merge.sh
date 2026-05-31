@@ -34,7 +34,7 @@ json_merge() {
       local src="$backup"
     else
       local src="$settings"
-      local tmp_bak="${settings}.pcfg-bak.$(timestamp)"
+      local tmp_bak; tmp_bak="${settings}.pcfg-bak.$(timestamp)"
       cp "$settings" "$tmp_bak"
       src="$tmp_bak"
       backup="$tmp_bak"
@@ -116,7 +116,7 @@ toml_merge_mcp() {
     # 기존 동일 섹션 제거 (멱등)
     _toml_remove_section "$config_toml" "$name"
 
-    local backup_tmp="${config_toml}.pcfg-bak.$(timestamp)"
+    local backup_tmp; backup_tmp="${config_toml}.pcfg-bak.$(timestamp)"
     cp "$config_toml" "$backup_tmp"
 
     # JSON → TOML 섹션 변환
@@ -189,34 +189,29 @@ _json_to_toml_mcp_section() {
   fi
 
   if command -v python3 &>/dev/null; then
-    python3 - "$name" <<PYEOF
-import sys, json
-try:
-    import tomllib
-except ImportError:
-    tomllib = None
-
+    # JSON을 환경변수로 전달 (heredoc이 stdin을 소비하므로 stdin 재사용 불가)
+    PCFG_MCP_JSON="$json" python3 - "$name" <<'PYEOF'
+import sys, json, os
 name = sys.argv[1]
-raw = sys.stdin.read()
-data = json.loads(raw)
+data = json.loads(os.environ['PCFG_MCP_JSON'])
 
 lines = [f'[mcp_servers.{name}]']
 for k, v in data.items():
     if isinstance(v, str):
-        escaped = v.replace('\\\\', '\\\\\\\\').replace('"', '\\\\"')
+        escaped = v.replace('\\', '\\\\').replace('"', '\\"')
         lines.append(f'{k} = "{escaped}"')
     elif isinstance(v, list):
         items = ', '.join(f'"{x}"' if isinstance(x, str) else str(x) for x in v)
         lines.append(f'{k} = [{items}]')
     elif isinstance(v, dict):
         for dk, dv in v.items():
-            escaped = str(dv).replace('\\\\', '\\\\\\\\').replace('"', '\\\\"')
+            escaped = str(dv).replace('\\', '\\\\').replace('"', '\\"')
             lines.append(f'{k}.{dk} = "{escaped}"')
     elif isinstance(v, bool):
         lines.append(f'{k} = {"true" if v else "false"}')
     elif isinstance(v, (int, float)):
         lines.append(f'{k} = {v}')
-print('\\n'.join(lines))
+print('\n'.join(lines))
 PYEOF
     return
   fi

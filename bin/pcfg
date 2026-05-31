@@ -35,7 +35,6 @@ source "${LIB}/merge.sh"
 # ── 공통 인자 파싱 헬퍼 ──────────────────────────────────────────────────────
 _parse_common_flags() {
   OPT_AGENT="all"
-  OPT_FORCE=0
   OPT_RESTORE=0
   OPT_PRUNE=0
   REMAINING_ARGS=()
@@ -45,7 +44,7 @@ _parse_common_flags() {
       --dry-run)   PCFG_DRY_RUN=1; shift ;;
       --agent)     OPT_AGENT="${2:-all}"; shift 2 ;;
       --agent=*)   OPT_AGENT="${1#*=}"; shift ;;
-      --force)     OPT_FORCE=1; shift ;;
+      --force)     shift ;;  # 미구현 (향후 확장용)
       --restore)   OPT_RESTORE=1; shift ;;
       --prune)     OPT_PRUNE=1; shift ;;
       *)           REMAINING_ARGS+=("$1"); shift ;;
@@ -115,7 +114,10 @@ _install_one() {
 
   case "$mechanism" in
     symlink)
-      symlink_install "$type" "$agent" "$name" "$src" "$dest"
+      # rules 는 .md 파일 자체를 symlink, skills 는 디렉토리
+      local actual_src="$src"
+      [[ "$type" == "rules" ]] && actual_src="${src}.md"
+      symlink_install "$type" "$agent" "$name" "$actual_src" "$dest"
       ;;
     convert)
       convert_to_mdc "${src}.md" "$dest" "$name"
@@ -357,8 +359,13 @@ cmd_rename() {
   [[ -z "$type" || -z "$old" || -z "$new" ]] && \
     die "사용법: pcfg rename <type> <old> <new>"
 
-  local old_path="${REPO_ROOT}/agents/${type}/${old}"
-  local new_path="${REPO_ROOT}/agents/${type}/${new}"
+  # rules 는 파일(.md), skills/hooks 는 디렉토리, mcps 는 파일(.json)
+  local ext=""
+  [[ "$type" == "rules" ]] && ext=".md"
+  [[ "$type" == "mcps"  ]] && ext=".json"
+
+  local old_path="${REPO_ROOT}/agents/${type}/${old}${ext}"
+  local new_path="${REPO_ROOT}/agents/${type}/${new}${ext}"
 
   if [[ ! -e "$old_path" ]]; then
     die "소스가 없습니다: ${old_path}"

@@ -19,10 +19,10 @@ convert_to_mdc() {
     ensure_parent "$dest"
     local backup=""; backup="$(backup_if_exists "$dest")"
     {
-      printf '---\n'
-      printf '# %s\n' "$(pcfg_marker_begin "$name")"
+      printf '%s\n' '---'
+      printf '%s\n' "$(pcfg_marker_begin "$name")"
       printf 'description: auto-converted from personal-config agents/rules/%s.md\n' "$name"
-      printf '---\n'
+      printf '%s\n' '---'
       cat "$src"
     } > "$dest"
     state_record "rules" "cursor" "$name" "$dest" "convert" "$backup"

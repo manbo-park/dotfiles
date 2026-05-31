@@ -4,6 +4,7 @@
 # ── 지원 매트릭스 ─────────────────────────────────────────────────────────────
 # skills/hooks: claude, cursor 만 지원 (codex 미지원)
 # rules/mcps:   claude, cursor, codex 모두 지원
+# shellcheck disable=SC2034  # 간접 참조로 사용 (${!varname})
 SUPPORTED_AGENTS_rules="claude cursor codex"
 SUPPORTED_AGENTS_skills="claude cursor"
 SUPPORTED_AGENTS_hooks="claude cursor"

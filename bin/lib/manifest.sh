@@ -75,7 +75,8 @@ configs_pairs() {
   local prog="$1"
   local mf; mf="$(configs_manifest "$prog")"
   if [[ ! -f "$mf" ]]; then
-    die "configs/${prog}/manifest 가 없습니다. destination 을 지정해야 합니다."
+    log_warn "configs/${prog}/manifest 가 없습니다. destination 을 지정하려면 manifest 를 추가하세요. 건너뜁니다."
+    return 0
   fi
 
   local base_dir="${REPO_ROOT}/configs/${prog}"
