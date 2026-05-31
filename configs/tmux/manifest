@@ -1,0 +1,2 @@
+# source                destination
+tmux.conf              ~/.config/tmux/tmux.conf
