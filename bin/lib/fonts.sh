@@ -114,6 +114,11 @@ _install_fonts() {
     while IFS= read -r font_file; do
       local fname; fname="$(basename "$font_file")"
       _font_matches_patterns "$fname" "$patterns" || continue
+      if [[ -f "${dest_dir}/${fname}" ]]; then
+        log_skip "폰트 이미 설치됨: ${dest_dir}/${fname}"
+        ((count++)) || true
+        continue
+      fi
       cp "$font_file" "${dest_dir}/${fname}"
       state_record "fonts" "_" "${family}/${fname}" "${dest_dir}/${fname}" "font" ""
       log_ok "폰트 설치: ${dest_dir}/${fname}"
