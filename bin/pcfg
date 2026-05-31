@@ -31,6 +31,8 @@ source "${LIB}/symlink.sh"
 source "${LIB}/convert.sh"
 # shellcheck source=bin/lib/merge.sh
 source "${LIB}/merge.sh"
+# shellcheck source=bin/lib/fonts.sh
+source "${LIB}/fonts.sh"
 
 # ── 공통 인자 파싱 헬퍼 ──────────────────────────────────────────────────────
 _parse_common_flags() {
@@ -54,7 +56,7 @@ _parse_common_flags() {
 
 # ── type 목록 ─────────────────────────────────────────────────────────────────
 ALL_AGENT_TYPES="rules skills hooks mcps"
-ALL_TYPES="${ALL_AGENT_TYPES} configs"
+ALL_TYPES="${ALL_AGENT_TYPES} configs fonts"
 
 _expand_type() {
   local t="$1"
@@ -77,6 +79,8 @@ cmd_install() {
   for type in $types; do
     if [[ "$type" == "configs" ]]; then
       _install_configs "$name_arg"
+    elif [[ "$type" == "fonts" ]]; then
+      _install_fonts "$name_arg"
     else
       _install_agent_type "$type" "$name_arg" "$OPT_AGENT"
     fi
@@ -169,6 +173,8 @@ cmd_uninstall() {
   for type in $types; do
     if [[ "$type" == "configs" ]]; then
       _uninstall_configs "$name_arg" "$restore_flag"
+    elif [[ "$type" == "fonts" ]]; then
+      _uninstall_fonts "$name_arg" "$restore_flag"
     else
       _uninstall_agent_type "$type" "$name_arg" "$OPT_AGENT" "$restore_flag"
     fi
@@ -283,6 +289,20 @@ cmd_list() {
       list_config_items | while read -r prog; do
         printf '  %s\n' "$prog"
       done
+    elif [[ "$type" == "fonts" ]]; then
+      list_font_families | while read -r family; do
+        if [[ ! -f "${FONTS_DIR}/${family}/source.json" ]]; then
+          printf '  %s  %s[source.json 없음]%s\n' "$family" "$_YEL" "$_RST"
+          continue
+        fi
+        local count; count="$(state_query "fonts" "_" 2>/dev/null \
+          | grep -c "^fonts	_	${family}/" || true)"
+        if [[ "$count" -gt 0 ]]; then
+          printf '  %s  %s[✓ %s개]%s\n' "$family" "$_GRN" "$count" "$_RST"
+        else
+          printf '  %s  %s[미설치]%s\n' "$family" "$_YEL" "$_RST"
+        fi
+      done
     else
       list_agent_items "$type" | while read -r name; do
         local agents; agents="$(resolve_agents "$type" "$OPT_AGENT")"
@@ -337,7 +357,7 @@ cmd_status() {
           ((found++)) || true
         fi
         ;;
-      convert|merge-section)
+      convert|merge-section|font)
         if [[ ! -f "$dest" ]]; then
           log_warn "파일 없음: ${dest} (${type}/${agent}/${name})"
           ((found++)) || true
@@ -399,7 +419,7 @@ cmd_doctor() {
         symlink)
           [[ -L "$dest" && "$(readlink "$dest" 2>/dev/null)" == "${REPO_ROOT}"* ]] || keep=0
           ;;
-        convert|merge-section)
+        convert|merge-section|font)
           [[ -f "$dest" ]] || keep=0
           ;;
       esac
@@ -426,7 +446,7 @@ usage() {
   pcfg rename    <type> <old> <new>
   pcfg doctor    [--prune]
 
-<type>: skills | rules | hooks | mcps | configs | all (생략=all)
+<type>: skills | rules | hooks | mcps | configs | fonts | all (생략=all)
 EOF
   exit 1
 }
