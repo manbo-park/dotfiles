@@ -76,7 +76,10 @@ cmd_install() {
   check_deps
 
   local types; types="$(_expand_type "$type_arg")"
+  local first=1
   for type in $types; do
+    [[ "$first" == 1 ]] && first=0 || printf '\n'
+    printf '%s=== %s ===%s\n' "$_BLD" "$type" "$_RST"
     if [[ "$type" == "configs" ]]; then
       _install_configs "$name_arg"
     elif [[ "$type" == "fonts" ]]; then
@@ -170,7 +173,10 @@ cmd_uninstall() {
   local restore_flag=""; [[ "$OPT_RESTORE" == 1 ]] && restore_flag="--restore"
 
   local types; types="$(_expand_type "$type_arg")"
+  local first=1
   for type in $types; do
+    [[ "$first" == 1 ]] && first=0 || printf '\n'
+    printf '%s=== %s ===%s\n' "$_BLD" "$type" "$_RST"
     if [[ "$type" == "configs" ]]; then
       _uninstall_configs "$name_arg" "$restore_flag"
     elif [[ "$type" == "fonts" ]]; then
