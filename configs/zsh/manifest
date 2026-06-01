@@ -1,2 +1,3 @@
 # source                destination
 zshrc                  ~/.zshrc
+zshenv                 ~/.zshenv
