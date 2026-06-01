@@ -29,9 +29,13 @@ list_font_families() {
 # source.json 필드 읽기
 _font_field() { jq -r "${2} // empty" "${FONTS_DIR}/${1}/source.json" 2>/dev/null; }
 
-_font_url()      { _font_field "$1" '.url'; }
-_font_version()  { _font_field "$1" '.version // "latest"'; }
-_font_patterns() { _font_field "$1" '.files[]?'; }
+_font_url()           { _font_field "$1" '.url'; }
+_font_version()       { _font_field "$1" '.version // "latest"'; }
+_font_patterns()      { _font_field "$1" '.files[]?'; }
+_font_manual()        { _font_field "$1" '.manual'; }
+_font_download_page() { _font_field "$1" '.download_page'; }
+_font_note()          { _font_field "$1" '.note'; }
+_font_check_files()   { _font_field "$1" '.check_files[]?'; }
 
 # zip 다운로드 (캐시 적중 시 재사용)
 _download_font_zip() {
@@ -87,6 +91,30 @@ _install_fonts() {
 
     [[ -d "$src_dir" ]] || { log_warn "폰트 디렉토리가 없습니다: ${src_dir}"; continue; }
     [[ -f "$source_json" ]] || { log_warn "${family}/source.json 이 없습니다. 건너뜁니다."; continue; }
+
+    # 수동 설치 폰트: 자동 다운로드 대신 안내만 노출하고 건너뜀
+    if [[ "$(_font_manual "$family")" == "true" ]]; then
+      # check_files 글로브 중 하나라도 설치 디렉토리에 있으면 이미 설치된 것으로 본다
+      local checks; checks="$(_font_check_files "$family")"
+      if [[ -n "$checks" ]]; then
+        local pattern
+        while IFS= read -r pattern; do
+          [[ -z "$pattern" ]] && continue
+          if compgen -G "$(_fonts_install_dir)/${pattern}" >/dev/null 2>&1; then
+            log_skip "${family}: 이미 설치되어 있습니다."
+            continue 2
+          fi
+        done <<< "$checks"
+      fi
+
+      local page note
+      page="$(_font_download_page "$family")"
+      note="$(_font_note "$family")"
+      log_info "${family}: 수동 설치가 필요한 폰트입니다."
+      [[ -n "$note" ]] && log_warn "  ${note}"
+      [[ -n "$page" ]] && log_info "  다운로드: ${page}"
+      continue
+    fi
 
     local url version patterns
     url="$(_font_url "$family")"

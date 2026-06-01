@@ -1,1 +1,11 @@
 font-family = "DepartureMono Nerd Font"
+
+# 한글 fallback
+font-family = "PF스타더스트 Bold"
+
+# DepartureMono에 bold/italic 변형이 없어서 bold 텍스트에 합성 스타일이 적용되는 것을 방지
+font-style-bold = Regular
+font-style-italic = Regular
+font-style-bold-italic = Regular
+
+theme = "Monokai Pro"
