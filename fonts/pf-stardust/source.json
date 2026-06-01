@@ -1,0 +1,6 @@
+{
+  "manual": true,
+  "download_page": "https://m.blog.naver.com/campanula913/221366697603",
+  "note": "재배포 금지 라이선스로 자동 다운로드를 제공하지 않습니다. 아래 페이지에서 받아 직접 설치하세요. (ghostty 한글 fallback: PF스타더스트 Bold)",
+  "check_files": ["PF*Bold.ttf", "PF*Bold.otf"]
+}
