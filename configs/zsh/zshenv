@@ -8,4 +8,5 @@
 export LANG=en_US.UTF-8
 
 # 머신별 환경변수(토큰, 경로 등) — 버전 관리 제외
+# 템플릿: configs/zsh/zshenv.local.example → cp 후 ~/.zshenv.local 에 값 입력
 [[ -f "$HOME/.zshenv.local" ]] && source "$HOME/.zshenv.local"
