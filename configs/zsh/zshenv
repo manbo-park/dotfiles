@@ -6,3 +6,6 @@
 # UTF-8 로케일 — 미설정 시 C 로케일로 떨어져 tmux 가 비-UTF-8 모드로 동작한다.
 # LC_* 카테고리를 따로 지정하지 않으면 LANG 이 그 기본값이 되므로 LANG 하나로 충분하다.
 export LANG=en_US.UTF-8
+
+# GitHub PAT — GitHub MCP 인증에 사용됨 (https://github.com/settings/personal-access-tokens)
+export GITHUB_PAT=""
