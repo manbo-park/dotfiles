@@ -84,7 +84,9 @@ require_cmd() {
 
 brew_ensure() {
   local cmd="$1" tap="${2:-}" pkg="${3:-$1}" type="${4:-brew}"
-  if command -v "$cmd" &>/dev/null; then
+  if [[ "$type" == "cask" ]]; then
+    brew list --cask "$pkg" &>/dev/null && return 0
+  elif command -v "$cmd" &>/dev/null; then
     return 0
   fi
   if ! command -v brew &>/dev/null; then
