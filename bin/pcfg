@@ -126,8 +126,9 @@ _install_agent_type() {
       _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
         _install_one "$type" "$agent" "$name"
     done
-    [[ "$type" == "mcps" ]] && \
+    if [[ "$type" == "mcps" ]]; then
       _warn_mcp_missing_env "$name" "${REPO_ROOT}/agents/mcps/${name}.json"
+    fi
   done
 }
 
