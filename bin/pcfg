@@ -99,7 +99,12 @@ _warn_mcp_missing_env() {
   while IFS= read -r var; do
     [[ -z "$var" ]] && continue
     if [[ -z "${!var+x}" ]]; then
-      log_warn "${name} MCP: \${${var}} 환경변수가 설정되지 않았습니다. 사용 전 export ${var}=... 를 실행하세요."
+      # ~/.zshenv.local 에 정의되어 있으면 경고 생략
+      if [[ -f "$HOME/.zshenv.local" ]] && \
+         grep -qE "^[[:space:]]*(export[[:space:]]+)?${var}[[:space:]]*=" "$HOME/.zshenv.local"; then
+        continue
+      fi
+      log_warn "${name} MCP: \${${var}} 환경변수가 설정되지 않았습니다. ~/.zshenv.local 에 export ${var}=... 를 추가하세요."
     fi
   done < <(grep -oE '\$\{[A-Z_][A-Z0-9_]*\}' "$json_file" | sed 's/[${}]//g' | sort -u)
 }
