@@ -22,6 +22,17 @@ json_merge() {
     payload="$fragment"
   fi
 
+  # 이미 동일한 값이면 no-op
+  if [[ -f "$settings" ]]; then
+    local same
+    same="$(jq --argjson val "$payload" --arg key "$name" --arg top "$top_key" \
+      'if (.[$top][$key]) == $val then "yes" else "no" end' "$settings" 2>/dev/null || echo no)"
+    if [[ "$same" == '"yes"' ]]; then
+      log_skip "json-merge [${top_key}.${name}]: ${settings} (이미 최신 내용)"
+      return
+    fi
+  fi
+
   if ! is_dry; then
     ensure_parent "$settings"
     # 파일이 없으면 빈 객체로 초기화
@@ -109,6 +120,27 @@ toml_merge_mcp() {
     payload="$fragment"
   fi
 
+  # JSON → TOML 섹션 변환
+  local toml_section; toml_section="$(_json_to_toml_mcp_section "$name" "$payload")"
+  if [[ -z "$toml_section" ]]; then
+    log_warn "TOML 변환 실패: ${name} — 건너뜁니다."
+    return
+  fi
+
+  # 이미 동일한 섹션이 있으면 no-op
+  if [[ -f "$config_toml" ]]; then
+    local current
+    current="$(awk -v hdr="[mcp_servers.${name}]" '
+      $0==hdr {cap=1; print; next}
+      cap && /^\[/ {cap=0}
+      cap {print}
+    ' "$config_toml")"
+    if [[ "$current" == "$toml_section" ]]; then
+      log_skip "toml-merge [mcp_servers.${name}]: ${config_toml} (이미 최신 내용)"
+      return
+    fi
+  fi
+
   if ! is_dry; then
     ensure_parent "$config_toml"
     [[ -f "$config_toml" ]] || touch "$config_toml"
@@ -118,14 +150,6 @@ toml_merge_mcp() {
 
     local backup_tmp; backup_tmp="${config_toml}.pcfg-bak.$(timestamp)"
     cp "$config_toml" "$backup_tmp"
-
-    # JSON → TOML 섹션 변환
-    local toml_section; toml_section="$(_json_to_toml_mcp_section "$name" "$payload")"
-    if [[ -z "$toml_section" ]]; then
-      log_warn "TOML 변환 실패: ${name} — 건너뜁니다."
-      rm -f "$backup_tmp"
-      return
-    fi
 
     printf '\n%s\n' "$toml_section" >> "$config_toml"
     state_record "mcps" "codex" "$name" "$config_toml" "merge-toml" "$backup_tmp"
