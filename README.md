@@ -28,10 +28,10 @@ personal-config/
 │   ├── rules/        # <name>.md
 │   ├── skills/       # <name>/ (디렉토리)
 │   ├── hooks/        # <name>/ (hook.json + scripts)
-│   └── mcps/         # <name>.json
+│   └── mcps/         # <name>.json [, <name>.skip]
 ├── configs/
 │   ├── tmux/         # tmux.conf + manifest
-│   ├── zsh/          # zshrc 등 + manifest
+│   ├── zsh/          # zshrc 등 + manifest, zshenv.local.example
 │   └── ghostty/      # config + manifest
 ├── fonts/
 │   ├── firacode/     # source.json (FiraCode Nerd Font)
@@ -136,6 +136,7 @@ pcfg doctor --prune
 ```
 
 `${VAR}` 형식으로 환경변수를 참조하면, 설치 시 미설정 변수에 대해 경고가 출력됩니다.
+현재 환경 또는 `~/.zshenv.local` 중 하나에 정의되어 있으면 경고는 생략됩니다.
 실제 값은 파일에 포함하지 않습니다.
 
 ### 에이전트 제외 (.skip)
@@ -153,16 +154,18 @@ agents/mcps/github.skip   # 내용: codex
 `agents/mcps/github.json`은 GitHub 공식 원격 MCP 서버를 설정합니다.
 Claude Code와 Cursor에 설치되며, Codex는 stdio 미지원으로 자동 제외됩니다.
 
-**사전 준비 — GitHub PAT 발급:**
+**사전 준비 — GitHub PAT 발급 및 설정:**
 
 1. [GitHub 토큰 설정 페이지](https://github.com/settings/personal-access-tokens)에서 fine-grained token 생성
 2. 접근할 저장소에 대한 권한 부여
-3. 셸 설정에 환경변수 추가:
+3. `~/.zshenv.local` 생성 후 토큰 입력:
 
 ```bash
-# ~/.zshrc 또는 ~/.bashrc
-export GITHUB_PAT="ghp_..."
+cp configs/zsh/zshenv.local.example ~/.zshenv.local
+# ~/.zshenv.local 열어서 GITHUB_PAT 값 입력
 ```
+
+`~/.zshenv.local`은 버전 관리에서 제외되는 머신별 파일이며, `~/.zshenv`에서 자동으로 source됩니다. `bin/install` 재실행 시에도 덮어써지지 않습니다.
 
 설치 후 Claude Code에서 `/mcp`로 연결 상태를 확인할 수 있습니다.
 
