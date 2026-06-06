@@ -90,6 +90,20 @@ cmd_install() {
   done
 }
 
+# _warn_mcp_missing_env <name> <json-file>
+# JSON 내 ${VAR} 참조를 스캔해 미설정 환경변수를 경고한다.
+_warn_mcp_missing_env() {
+  local name="$1" json_file="$2"
+  [[ -f "$json_file" ]] || return 0
+  local var
+  while IFS= read -r var; do
+    [[ -z "$var" ]] && continue
+    if [[ -z "${!var+x}" ]]; then
+      log_warn "${name} MCP: \${${var}} 환경변수가 설정되지 않았습니다. 사용 전 export ${var}=... 를 실행하세요."
+    fi
+  done < <(grep -oE '\$\{[A-Z_][A-Z0-9_]*\}' "$json_file" | sed 's/[${}]//g' | sort -u)
+}
+
 _install_agent_type() {
   local type="$1" name_arg="$2" agent_arg="$3"
   local names
@@ -112,6 +126,8 @@ _install_agent_type() {
       _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
         _install_one "$type" "$agent" "$name"
     done
+    [[ "$type" == "mcps" ]] && \
+      _warn_mcp_missing_env "$name" "${REPO_ROOT}/agents/mcps/${name}.json"
   done
 }
 
