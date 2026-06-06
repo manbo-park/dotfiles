@@ -105,6 +105,10 @@ _install_agent_type() {
     local agents; agents="$(resolve_agents "$type" "$agent_arg")"
     [[ -z "$agents" ]] && continue
     for agent in $agents; do
+      if is_agent_skipped "$type" "$name" "$agent"; then
+        log_skip "${type}/${name}/${agent} — ${name}.skip 에 의해 제외됨"
+        continue
+      fi
       _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
         _install_one "$type" "$agent" "$name"
     done

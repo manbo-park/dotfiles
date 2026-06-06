@@ -66,6 +66,21 @@ list_agent_items() {
   done
 }
 
+# ── per-item 에이전트 제외 (.skip) ───────────────────────────────────────────
+# is_agent_skipped <type> <name> <agent>
+# agents/<type>/<name>.skip 파일에 해당 agent 가 있으면 0(참) 반환
+# 파일이 없으면 1(거짓) 반환
+is_agent_skipped() {
+  local type="$1" name="$2" agent="$3"
+  local skip_file="${REPO_ROOT}/agents/${type}/${name}.skip"
+  [[ -f "$skip_file" ]] || return 1
+  while IFS= read -r line; do
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ "$line" == "$agent" ]] && return 0
+  done < "$skip_file"
+  return 1
+}
+
 # ── configs 아이템 열거 ───────────────────────────────────────────────────────
 # list_config_items  → 프로그램 이름 목록
 list_config_items() {
