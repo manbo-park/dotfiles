@@ -83,7 +83,7 @@ require_cmd() {
 }
 
 brew_ensure() {
-  local cmd="$1" tap="${2:-}" pkg="${3:-$1}"
+  local cmd="$1" tap="${2:-}" pkg="${3:-$1}" type="${4:-brew}"
   if command -v "$cmd" &>/dev/null; then
     return 0
   fi
@@ -94,7 +94,11 @@ brew_ensure() {
   if [[ -n "$tap" ]]; then
     run_or_dry brew tap "$tap"
   fi
-  run_or_dry brew install "$pkg"
+  if [[ "$type" == "cask" ]]; then
+    run_or_dry brew install --cask "$pkg"
+  else
+    run_or_dry brew install "$pkg"
+  fi
 }
 
 check_deps() {
@@ -105,7 +109,11 @@ check_deps() {
       die "TOML 변환을 위해 'dasel' 또는 'python3'(tomllib/tomli_w) 가 필요합니다."
     fi
   fi
-  brew_ensure im-select daipeihust/tap im-select
+  brew_ensure ghostty   ""                 ghostty   cask
+  brew_ensure starship  ""                 starship
+  brew_ensure tmux      ""                 tmux
+  brew_ensure zsh       ""                 zsh
+  brew_ensure im-select daipeihust/tap     im-select
 }
 
 # ── PCFG 마커 ─────────────────────────────────────────────────────────────────
