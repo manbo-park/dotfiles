@@ -30,7 +30,7 @@ target_dest() {
     skills:cursor) echo "$HOME/.cursor/skills/${name}" ;;
     hooks:claude)  echo "$HOME/.claude/settings.json" ;;     # .hooks 키에 merge
     hooks:cursor)  echo "$HOME/.cursor/settings/settings.json" ;;  # .hooks 키에 merge
-    mcps:claude)   echo "$HOME/.claude/settings.json" ;;     # .mcpServers 키에 merge
+    mcps:claude)   echo "$HOME/.claude.json" ;;               # .mcpServers 키에 merge
     mcps:cursor)   echo "$HOME/.cursor/mcp.json" ;;          # .mcpServers 키에 merge
     mcps:codex)    echo "$HOME/.codex/config.toml" ;;        # [mcp_servers.<name>] merge
     *)             echo "" ;;

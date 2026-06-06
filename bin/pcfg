@@ -90,6 +90,25 @@ cmd_install() {
   done
 }
 
+# _warn_mcp_missing_env <name> <json-file>
+# JSON 내 ${VAR} 참조를 스캔해 미설정 환경변수를 경고한다.
+_warn_mcp_missing_env() {
+  local name="$1" json_file="$2"
+  [[ -f "$json_file" ]] || return 0
+  local var
+  while IFS= read -r var; do
+    [[ -z "$var" ]] && continue
+    if [[ -z "${!var+x}" ]]; then
+      # ~/.zshenv.local 에 정의되어 있으면 경고 생략
+      if [[ -f "$HOME/.zshenv.local" ]] && \
+         grep -qE "^[[:space:]]*(export[[:space:]]+)?${var}[[:space:]]*=" "$HOME/.zshenv.local"; then
+        continue
+      fi
+      log_warn "${name} MCP: \${${var}} 환경변수가 설정되지 않았습니다. ~/.zshenv.local 에 export ${var}=... 를 추가하세요."
+    fi
+  done < <(grep -oE '\$\{[A-Z_][A-Z0-9_]*\}' "$json_file" | sed 's/[${}]//g' | sort -u)
+}
+
 _install_agent_type() {
   local type="$1" name_arg="$2" agent_arg="$3"
   local names
@@ -105,9 +124,16 @@ _install_agent_type() {
     local agents; agents="$(resolve_agents "$type" "$agent_arg")"
     [[ -z "$agents" ]] && continue
     for agent in $agents; do
+      if is_agent_skipped "$type" "$name" "$agent"; then
+        log_skip "${type}/${name}/${agent} — ${name}.skip 에 의해 제외됨"
+        continue
+      fi
       _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
         _install_one "$type" "$agent" "$name"
     done
+    if [[ "$type" == "mcps" ]]; then
+      _warn_mcp_missing_env "$name" "${REPO_ROOT}/agents/mcps/${name}.json"
+    fi
   done
 }
 

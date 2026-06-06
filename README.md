@@ -103,7 +103,68 @@ pcfg doctor --prune
 | rules  | ✓ symlink   | ✓ .mdc 변환 | ✓ AGENTS.md 섹션 |
 | skills | ✓ symlink   | ✓ symlink   | ✗ 미지원 |
 | hooks  | ✓ JSON merge | ✓ JSON merge | ✗ 미지원 |
-| mcps   | ✓ JSON merge | ✓ JSON merge | ✓ TOML merge |
+| mcps   | ✓ JSON merge (`~/.claude.json`) | ✓ JSON merge (`~/.cursor/mcp.json`) | ✓ TOML merge¹ |
+
+> ¹ Codex는 stdio 방식(`command`/`args`)만 지원합니다. 원격 http 방식의 MCP는 `<name>.skip` 파일에 `codex`를 명시해 제외하세요.
+
+## mcps JSON 형식
+
+각 `agents/mcps/<name>.json` 파일에 MCP 서버 정의를 작성합니다.
+
+**원격 http 방식** (Claude Code 권장):
+
+```json
+{
+  "type": "http",
+  "url": "https://example.com/mcp/",
+  "headers": {
+    "Authorization": "Bearer ${MY_API_KEY}"
+  }
+}
+```
+
+**로컬 stdio 방식**:
+
+```json
+{
+  "command": "npx",
+  "args": ["-y", "@example/mcp-server"],
+  "env": {
+    "EXAMPLE_API_KEY": "${EXAMPLE_API_KEY}"
+  }
+}
+```
+
+`${VAR}` 형식으로 환경변수를 참조하면, 설치 시 미설정 변수에 대해 경고가 출력됩니다.
+실제 값은 파일에 포함하지 않습니다.
+
+### 에이전트 제외 (.skip)
+
+특정 MCP를 일부 에이전트에서 제외하려면 같은 이름의 `.skip` 파일을 추가합니다:
+
+```
+agents/mcps/github.skip   # 내용: codex
+```
+
+`.skip` 파일에는 제외할 에이전트 이름을 한 줄에 하나씩 작성합니다 (`claude` / `cursor` / `codex`).
+
+### GitHub MCP 설정
+
+`agents/mcps/github.json`은 GitHub 공식 원격 MCP 서버를 설정합니다.
+Claude Code와 Cursor에 설치되며, Codex는 stdio 미지원으로 자동 제외됩니다.
+
+**사전 준비 — GitHub PAT 발급:**
+
+1. [GitHub 토큰 설정 페이지](https://github.com/settings/personal-access-tokens)에서 fine-grained token 생성
+2. 접근할 저장소에 대한 권한 부여
+3. 셸 설정에 환경변수 추가:
+
+```bash
+# ~/.zshrc 또는 ~/.bashrc
+export GITHUB_PAT="ghp_..."
+```
+
+설치 후 Claude Code에서 `/mcp`로 연결 상태를 확인할 수 있습니다.
 
 ## fonts source.json 형식
 
