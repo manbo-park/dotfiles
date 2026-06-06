@@ -82,6 +82,21 @@ require_cmd() {
   fi
 }
 
+brew_ensure() {
+  local cmd="$1" tap="${2:-}" pkg="${3:-$1}"
+  if command -v "$cmd" &>/dev/null; then
+    return 0
+  fi
+  if ! command -v brew &>/dev/null; then
+    die "'$cmd' 설치에 Homebrew가 필요합니다. https://brew.sh 를 참고하세요."
+  fi
+  log_info "'$cmd' 가 없어 Homebrew로 설치합니다..."
+  if [[ -n "$tap" ]]; then
+    run_or_dry brew tap "$tap"
+  fi
+  run_or_dry brew install "$pkg"
+}
+
 check_deps() {
   require_cmd jq
   # TOML 변환: dasel 또는 python3(tomllib/tomli_w)
@@ -90,6 +105,7 @@ check_deps() {
       die "TOML 변환을 위해 'dasel' 또는 'python3'(tomllib/tomli_w) 가 필요합니다."
     fi
   fi
+  brew_ensure im-select daipeihust/tap im-select
 }
 
 # ── PCFG 마커 ─────────────────────────────────────────────────────────────────
