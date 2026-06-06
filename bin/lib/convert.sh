@@ -6,6 +6,16 @@
 # 의존: common.sh, state.sh
 
 # ── cursor: .md → .mdc ────────────────────────────────────────────────────────
+# 내부: .mdc 파일 내용 생성 (skip 판정·실제 쓰기에서 공통 사용)
+_mdc_content() {
+  local src="$1" name="$2"
+  printf '%s\n' '---'
+  printf '%s\n' "$(pcfg_marker_begin "$name")"
+  printf 'description: auto-converted from personal-config agents/rules/%s.md\n' "$name"
+  printf '%s\n' '---'
+  cat "$src"
+}
+
 # convert_to_mdc <src-md> <dest-mdc> <name>
 convert_to_mdc() {
   local src="$1" dest="$2" name="$3"
@@ -15,16 +25,16 @@ convert_to_mdc() {
     return
   fi
 
+  # 이미 동일한 내용이면 no-op
+  if [[ -f "$dest" ]] && _mdc_content "$src" "$name" | diff -q - "$dest" >/dev/null 2>&1; then
+    log_skip "변환(mdc): ${dest} (이미 최신 내용)"
+    return
+  fi
+
   if ! is_dry; then
     ensure_parent "$dest"
     local backup=""; backup="$(backup_if_exists "$dest")"
-    {
-      printf '%s\n' '---'
-      printf '%s\n' "$(pcfg_marker_begin "$name")"
-      printf 'description: auto-converted from personal-config agents/rules/%s.md\n' "$name"
-      printf '%s\n' '---'
-      cat "$src"
-    } > "$dest"
+    _mdc_content "$src" "$name" > "$dest"
     state_record "rules" "cursor" "$name" "$dest" "convert" "$backup"
     log_ok "변환(mdc): ${dest}"
   else
@@ -65,6 +75,14 @@ remove_mdc() {
 }
 
 # ── codex: AGENTS.md 마커 블록 삽입 ─────────────────────────────────────────
+# 내부: 마커 블록(begin..end 포함) 생성 (skip 판정·실제 쓰기에서 공통 사용)
+_agents_section_block() {
+  local src="$1" begin="$2" end="$3"
+  printf '%s\n' "$begin"
+  cat "$src"
+  printf '\n%s\n' "$end"
+}
+
 # merge_agents_section <agents-md> <src-md> <name>
 merge_agents_section() {
   local agents_md="$1" src="$2" name="$3"
@@ -74,6 +92,18 @@ merge_agents_section() {
   if [[ ! -f "$src" ]]; then
     log_warn "소스가 없습니다: ${src} — 건너뜁니다."
     return
+  fi
+
+  # 이미 동일한 섹션이 있으면 no-op
+  if [[ -f "$agents_md" ]] && grep -qF "$begin" "$agents_md"; then
+    local current expected
+    current="$(awk -v b="$begin" -v e="$end" \
+      '$0==b{cap=1} cap{print} $0==e{exit}' "$agents_md")"
+    expected="$(_agents_section_block "$src" "$begin" "$end")"
+    if [[ "$current" == "$expected" ]]; then
+      log_skip "merge-section(codex AGENTS.md): ${name} (이미 최신 내용)"
+      return
+    fi
   fi
 
   if ! is_dry; then
@@ -86,9 +116,8 @@ merge_agents_section() {
 
     # 블록 추가
     {
-      printf '\n%s\n' "$begin"
-      cat "$src"
-      printf '\n%s\n' "$end"
+      printf '\n'
+      _agents_section_block "$src" "$begin" "$end"
     } >> "$agents_md"
 
     state_record "rules" "codex" "$name" "$agents_md" "merge-section" ""
