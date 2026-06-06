@@ -1,0 +1,2 @@
+# source                destination
+starship.toml          ~/.config/starship/starship.toml

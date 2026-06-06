@@ -1,0 +1,120 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+format = """
+[](bg:ld1 fg:black)\
+$directory\
+[](bg:ld2 fg:ld1)[](fg:ld2 bg:ld1)\
+${custom.git_branch_prefix}\
+${custom.git_branch_name}\
+$git_status\
+[](bg:ld2 fg:ld1)[](fg:ld2 bg:ld1)\
+$time\
+[](fg:ld1) \
+$cmd_duration\
+$line_break\
+$character"""
+
+palette = 'manbo'
+
+[directory]
+fish_style_pwd_dir_length = 2
+truncation_length = 1
+truncation_symbol = "…/"
+truncate_to_repo = false
+style = "fg:om3 bg:ld1"
+format = "[ $path ]($style)"
+before_repo_root_style = "fg:om3 bg:ld1"
+repo_root_style = "bold fg:hm2 bg:ld1"
+repo_root_format = "[ $before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path ]($style)"
+
+[git_branch]
+disabled = true
+
+# prefix 부분 (bugfix/)
+[custom.git_branch_prefix]
+when = 'git rev-parse --is-inside-work-tree 2>/dev/null'
+command = 'git rev-parse --abbrev-ref HEAD 2>/dev/null | sed -n "s#\(.*/\).*#\1#p"'
+shell = ['sh']
+symbol = ""
+style = "fg:ki2 bg:ld1"
+format = '[ $symbol $output]($style)'
+
+# 브랜치 이름 부분 (MPSR-xxxxxx)
+[custom.git_branch_name]
+when = 'git rev-parse --is-inside-work-tree 2>/dev/null'
+command = 'git rev-parse --abbrev-ref HEAD 2>/dev/null | sed "s#.*/##"'
+shell = ['sh']
+style = "bold fg:ki3 bg:ld1"
+format = '[$output ]($style)'
+
+[git_status]
+ahead = '[⇡${count}](fg:hm1 bg:ld1)'
+diverged = '[⇡${ahead_count}](fg:hm1 bg:ld1) [⇣${behind_count}](fg:ki2 bg:ld1)'
+behind = '[⇣${count}](fg:ok1 bg:ld1)'
+format = '[($all_status )](fg:ok1 bg:ld1)[($ahead_behind )](fg:ki2 bg:ld1)'
+
+[time]
+disabled = false
+time_format = "%T"
+style = "fg:ok1 bg:ld1"
+format = '[  $time ]($style)'
+
+[line_break]
+disabled = false
+
+[character]
+disabled = false
+success_symbol = '[❯](bold fg:ki2)'
+error_symbol = '[❯](bold fg:hm1)'
+vimcmd_symbol = '[❮](bold fg:ki2)'
+vimcmd_replace_one_symbol = '[❮](bold fg:ld2)'
+vimcmd_replace_symbol = '[❮](bold fg:ld2)'
+vimcmd_visual_symbol = '[❮](bold fg:ok1)'
+
+[cmd_duration]
+show_milliseconds = true
+style = "fg:ld2"
+format = "[ in $duration ]($style)"
+disabled = false
+show_notifications = true
+min_time_to_notify = 45000
+
+[palettes.manbo]
+rosewater = "#f5e0dc"
+flamingo = "#f2cdcd"
+pink = "#f5c2e7"
+mauve = "#cba6f7"
+red = "#f38ba8"
+maroon = "#eba0ac"
+peach = "#fab387"
+yellow = "#f9e2af"
+green = "#a6e3a1"
+teal = "#94e2d5"
+sky = "#89dceb"
+sapphire = "#74c7ec"
+blue = "#89b4fa"
+lavender = "#b4befe"
+text = "#cdd6f4"
+subtext1 = "#bac2de"
+subtext0 = "#a6adc8"
+overlay2 = "#9399b2"
+overlay1 = "#7f849c"
+overlay0 = "#6c7086"
+surface2 = "#585b70"
+surface1 = "#45475a"
+surface0 = "#313244"
+base = "#1e1e2e"
+mantle = "#181825"
+crust = "#11111b"
+om1 = "#dc1935"
+om2 = "#ff314a"
+om3 = "#00aa06"
+hm1 = "#a72413"
+hm2 = "#ca3c28"
+ld1 = "#320a73"
+ld2 = "#936cc6"
+ki1 = "#44bfb7"
+ki2 = "#93dcd8"
+ki3 = "#f2d8c0"
+ok1 = "#f6c663"
+ok2 = "#ffe7b5"
