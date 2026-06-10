@@ -3,7 +3,7 @@
 format = """
 [](bg:ld1 fg:black)\
 $directory\
-[](bg:ld2 fg:ld1)[](fg:ld2 bg:ld1)\
+${custom.git_sep}\
 ${custom.git_branch_prefix}\
 ${custom.git_branch_name}\
 $git_status\
@@ -29,6 +29,12 @@ repo_root_format = "[ $before_root_path]($before_repo_root_style)[$repo_root]($r
 
 [git_branch]
 disabled = true
+
+[custom.git_sep]
+when = 'git rev-parse --is-inside-work-tree 2>/dev/null'
+command = ''
+shell = ['sh']
+format = '[](bg:ld2 fg:ld1)[](fg:ld2 bg:ld1)'
 
 # prefix 부분 (bugfix/)
 [custom.git_branch_prefix]
