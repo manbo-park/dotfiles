@@ -84,11 +84,12 @@ require_cmd() {
 
 brew_ensure() {
   local cmd="$1" tap="${2:-}" pkg="${3:-$1}" type="${4:-brew}"
-  if [[ "$type" == "cask" ]]; then
-    brew list --cask "$pkg" &>/dev/null && return 0
-  elif command -v "$cmd" &>/dev/null; then
-    return 0
-  fi
+  case "$type" in
+    cask) brew list --cask "$pkg" &>/dev/null && return 0 ;;
+    # lib: CLI 바이너리가 없는 formula (zsh 플러그인 등) — formula 설치 여부로 판별
+    lib)  brew list "$pkg" &>/dev/null && return 0 ;;
+    *)    command -v "$cmd" &>/dev/null && return 0 ;;
+  esac
   if ! command -v brew &>/dev/null; then
     die "'$cmd' 설치에 Homebrew가 필요합니다. https://brew.sh 를 참고하세요."
   fi
@@ -116,6 +117,8 @@ check_deps() {
   brew_ensure tmux      ""                 tmux
   brew_ensure zsh       ""                 zsh
   brew_ensure im-select daipeihust/tap     im-select
+  brew_ensure fzf       ""                 fzf
+  brew_ensure fzf-tab   ""                 fzf-tab   lib
 }
 
 # ── PCFG 마커 ─────────────────────────────────────────────────────────────────
