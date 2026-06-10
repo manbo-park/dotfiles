@@ -1,4 +1,4 @@
-# personal-config
+# dotfiles
 
 AI 코딩 에이전트(Claude Code / Cursor / Codex)의 rules·skills·hooks·mcps 설정과
 tmux·zsh·ghostty 등 프로그램 설정 파일, 개발 폰트를 한곳에서 버전 관리하는 dotfiles 저장소입니다.
@@ -18,7 +18,7 @@ tmux·zsh·ghostty 등 프로그램 설정 파일, 개발 폰트를 한곳에서
 ## 디렉토리 구조
 
 ```
-personal-config/
+dotfiles/
 ├── bin/
 │   ├── pcfg          # 단일 진입 CLI
 │   ├── install       # pcfg install 래퍼
@@ -210,4 +210,4 @@ tmux.conf        ~/.config/tmux/tmux.conf
 - **merge-toml(mcps-codex)**: `[mcp_servers.<name>]` 섹션 삽입.
 - **font(fonts)**: 이미 설치된 경우 no-op(멱등). 캐시된 zip이 있으면 재사용, 없으면 다운로드 후 패턴 매칭된 파일을 시스템 폰트 디렉토리에 복사.
 
-설치 상태는 `~/.local/state/personal-config/state.tsv` 에 기록됩니다.
+설치 상태는 `~/.local/state/dotfiles/state.tsv` 에 기록됩니다.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bin/pcfg — personal-config 단일 진입 CLI
+# bin/pcfg — dotfiles 단일 진입 CLI
 #
 # 사용법:
 #   pcfg install   [<type>] [<name>] [--agent <agent>] [--force] [--dry-run]

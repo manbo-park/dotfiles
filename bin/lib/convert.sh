@@ -11,7 +11,7 @@ _mdc_content() {
   local src="$1" name="$2"
   printf '%s\n' '---'
   printf '%s\n' "$(pcfg_marker_begin "$name")"
-  printf 'description: auto-converted from personal-config agents/rules/%s.md\n' "$name"
+  printf 'description: auto-converted from dotfiles agents/rules/%s.md\n' "$name"
   printf '%s\n' '---'
   cat "$src"
 }

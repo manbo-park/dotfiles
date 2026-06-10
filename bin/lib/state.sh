@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # bin/lib/state.sh — 설치 상태 lockfile + rename 원장 관리
 #
-# lockfile: ~/.local/state/personal-config/state.tsv
+# lockfile: ~/.local/state/dotfiles/state.tsv
 # 컬럼: type  agent  name  dest  mechanism  backup  ts
 
-STATE_FILE="${HOME}/.local/state/personal-config/state.tsv"
+STATE_FILE="${HOME}/.local/state/dotfiles/state.tsv"
 RENAMES_FILE="${REPO_ROOT}/renames.tsv"
 
 # ── lockfile 초기화 ───────────────────────────────────────────────────────────
