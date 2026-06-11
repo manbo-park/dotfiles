@@ -164,6 +164,13 @@ _install_one() {
       _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
         json_merge "$dest" "$top_key" "$name" "$frag"
       ;;
+    merge-env)
+      # ${VAR} → ${env:VAR} 로 변환 후 merge (VSCode mcp.json 형식)
+      local top_key; top_key="$(target_merge_key "$type" "$agent")"
+      local transformed; transformed="$(sed 's/\${\([A-Za-z_][A-Za-z0-9_]*\)}/\${env:\1}/g' "${src}.json")"
+      _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
+        json_merge "$dest" "$top_key" "$name" "$transformed"
+      ;;
     merge-toml)
       toml_merge_mcp "$dest" "$name" "${src}.json"
       ;;
@@ -255,7 +262,7 @@ _uninstall_one() {
     merge-section)
       remove_agents_section "$dest" "$name"
       ;;
-    merge)
+    merge|merge-env)
       local top_key; top_key="$(target_merge_key "$type" "$agent")"
       _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
         json_remove "$dest" "$top_key" "$name" "$restore_flag"
@@ -367,7 +374,7 @@ _is_installed() {
     merge-section)
       [[ -f "$dest" ]] && grep -qF "$(pcfg_marker_begin "$name")" "$dest" 2>/dev/null
       ;;
-    merge|merge-toml)
+    merge|merge-env|merge-toml)
       state_query "$type" "$agent" "$name" 2>/dev/null | grep -q .
       ;;
     *)
@@ -471,7 +478,7 @@ cmd_doctor() {
 usage() {
   cat >&2 <<'EOF'
 사용법:
-  pcfg install   [<type>] [<name>] [--agent <claude|cursor|codex|all>] [--force] [--dry-run]
+  pcfg install   [<type>] [<name>] [--agent <claude|cursor|codex|vscode|all>] [--force] [--dry-run]
   pcfg uninstall [<type>] [<name>] [--agent ...] [--restore] [--prune] [--dry-run]
   pcfg list      [<type>] [--agent ...]
   pcfg status
