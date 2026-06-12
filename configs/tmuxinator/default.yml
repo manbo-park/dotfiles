@@ -2,9 +2,10 @@ name: default
 root: <%= ENV['PWD'] %>
 
 windows:
-  - workspace:
+  - default:
       focus: true
-      layout: even-horizontal
+      layout: "ddd5,200x50,0,0{100x50,0,0[100x25,0,0,0,100x24,0,26,1],99x50,101,0,2}"
       panes:
-        - terminal: ""
-        - claude: claude
+        - clear; # 좌측 상단
+        - clear # 좌측 하단 (빈 터미널)
+        - clear; claude # 우측 전체

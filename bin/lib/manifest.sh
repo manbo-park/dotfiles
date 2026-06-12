@@ -129,12 +129,19 @@ configs_pairs() {
 
   local base_dir="${REPO_ROOT}/configs/${prog}"
   while IFS=$'\t' read -r src dest; do
-    local abs_src="${base_dir}/${src}"
-    if [[ ! -e "$abs_src" ]]; then
-      log_warn "소스 파일이 없습니다: ${abs_src} — 건너뜁니다."
-      continue
+    if [[ "$src" == *"*"* ]]; then
+      while IFS= read -r abs_src; do
+        local fname; fname="$(basename "$abs_src")"
+        printf '%s\t%s\n' "$abs_src" "${dest%/}/${fname}"
+      done < <(find "$base_dir" -maxdepth 1 -name "$src" | sort)
+    else
+      local abs_src="${base_dir}/${src}"
+      if [[ ! -e "$abs_src" ]]; then
+        log_warn "소스 파일이 없습니다: ${abs_src} — 건너뜁니다."
+        continue
+      fi
+      printf '%s\t%s\n' "$abs_src" "$dest"
     fi
-    printf '%s\t%s\n' "$abs_src" "$dest"
   done < <(parse_manifest "$mf")
 }
 

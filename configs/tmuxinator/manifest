@@ -1,2 +1,2 @@
 # source                           destination
-default.yml                        ~/.config/tmuxinator/default.yml
+*.yml                              ~/.config/tmuxinator/
