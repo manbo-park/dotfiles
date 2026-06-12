@@ -31,6 +31,7 @@ dotfiles/
 │   └── mcps/         # <name>.json [, <name>.skip]
 ├── configs/
 │   ├── tmux/         # tmux.conf + manifest
+│   ├── tmuxinator/   # default.yml + manifest
 │   ├── zsh/          # zshrc 등 + manifest, zshenv.local.example
 │   └── ghostty/      # config + manifest
 ├── fonts/
