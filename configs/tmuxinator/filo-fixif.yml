@@ -7,12 +7,12 @@ windows:
       layout: "ddd5,200x50,0,0{100x50,0,0[100x25,0,0,0,100x24,0,26,1],99x50,101,0,2}"
       panes:
         - clear; npm run dev
-        - clea
-        - clear; claude
+        - clear
+        - clear; claude --remote-control
   - fixif:
       root: ~/Desktop/dv/fixif
       layout: "ddd5,200x50,0,0{100x50,0,0[100x25,0,0,0,100x24,0,26,1],99x50,101,0,2}"
       panes:
         - clear; npm run dev
         - clear
-        - clear; claude
+        - clear; claude --remote-control

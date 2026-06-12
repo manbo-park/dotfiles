@@ -3,7 +3,6 @@ root: <%= ENV['PWD'] %>
 
 windows:
   - default:
-      focus: true
       layout: "ddd5,200x50,0,0{100x50,0,0[100x25,0,0,0,100x24,0,26,1],99x50,101,0,2}"
       panes:
         - clear; # 좌측 상단

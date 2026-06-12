@@ -1,0 +1,9 @@
+name: dotfiles
+root: ~/Desktop/dv/dotfiles
+
+windows:
+  - dotfiles:
+      layout: even-horizontal
+      panes:
+        - clear;
+        - clear; claude --remote-control
