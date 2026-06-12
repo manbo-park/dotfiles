@@ -42,6 +42,9 @@ dotfiles/
 ## 빠른 시작
 
 ```bash
+# 의존성 설치 (Homebrew 필요)
+brew bundle
+
 # PATH에 bin/ 추가
 export PATH="$PWD/bin:$PATH"
 
