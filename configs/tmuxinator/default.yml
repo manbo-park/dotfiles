@@ -1,11 +1,10 @@
 name: default
-root: ~/
+root: <%= ENV['PWD'] %>
 
 windows:
-  - editor:
-      layout: main-vertical
+  - workspace:
+      focus: true
+      layout: even-horizontal
       panes:
-        - ""
-        - ""
-  - terminal: ""
-  - git: ""
+        - terminal: ""
+        - claude: claude

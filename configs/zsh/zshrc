@@ -5,6 +5,7 @@ alias gplo='git pull origin'
 alias gps='git push'
 alias gpso='git push origin'
 alias gco='git checkout'
+alias mux='tmuxinator'
 
 # Plugins
 ## fzf-tab
@@ -26,6 +27,9 @@ zstyle ':fzf-tab:*' use-fzf-default-opts yes
 zstyle ':fzf-tab:*' switch-group '<' '>'
 zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
 
-# Starship
+# Environment Variables
+export EDITOR='code'
 export STARSHIP_CONFIG=~/.config/starship/starship.toml
+
+# Starship
 eval "$(starship init zsh)"

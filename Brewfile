@@ -1,5 +1,0 @@
-brew "bash"
-brew "jq"
-brew "dasel"
-brew "tmux"
-brew "tmuxinator"

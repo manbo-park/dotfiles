@@ -115,6 +115,7 @@ check_deps() {
   brew_ensure ghostty   ""                 ghostty   cask
   brew_ensure starship  ""                 starship
   brew_ensure tmux      ""                 tmux
+  brew_ensure tmuxinator ""               tmuxinator
   brew_ensure zsh       ""                 zsh
   brew_ensure im-select daipeihust/tap     im-select
   brew_ensure fzf       ""                 fzf
