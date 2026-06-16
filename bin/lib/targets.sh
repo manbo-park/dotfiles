@@ -9,6 +9,7 @@ SUPPORTED_AGENTS_rules="claude cursor codex"
 SUPPORTED_AGENTS_skills="claude cursor"
 SUPPORTED_AGENTS_hooks="claude cursor"
 SUPPORTED_AGENTS_mcps="claude cursor codex vscode"
+SUPPORTED_AGENTS_plugins="claude"
 
 # 해당 type 을 지원하는 에이전트 목록 반환
 supported_agents() {
@@ -54,6 +55,7 @@ target_mechanism() {
     mcps:cursor)   echo "merge" ;;      # JSON .mcpServers 키
     mcps:codex)    echo "merge-toml" ;; # TOML [mcp_servers.<name>]
     mcps:vscode)   echo "merge-env" ;;  # JSON .servers 키, ${VAR} → ${env:VAR} 변환
+    plugins:claude) echo "plugin" ;;    # claude plugin install (파일 dest 없음)
     *)             echo "" ;;
   esac
 }
