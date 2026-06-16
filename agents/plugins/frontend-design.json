@@ -1,0 +1,6 @@
+{
+  "claude": {
+    "marketplace": "claude-plugins-official",
+    "source": "anthropics/claude-plugins-official"
+  }
+}
