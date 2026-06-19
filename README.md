@@ -1,6 +1,6 @@
 # dotfiles
 
-AI 코딩 에이전트(Claude Code / Cursor / Codex)의 rules·skills·hooks·mcps 설정과
+AI 코딩 에이전트(Claude Code / Cursor / Codex)의 rules·skills·hooks·mcps·plugins 설정과
 tmux·zsh·ghostty 등 프로그램 설정 파일, 개발 폰트를 한곳에서 버전 관리하는 dotfiles 저장소입니다.
 
 ## 의존성
@@ -28,7 +28,8 @@ dotfiles/
 │   ├── rules/        # <name>.md
 │   ├── skills/       # <name>/ (디렉토리)
 │   ├── hooks/        # <name>/ (hook.json + scripts)
-│   └── mcps/         # <name>.json [, <name>.skip]
+│   ├── mcps/         # <name>.json [, <name>.skip]
+│   └── plugins/      # <name>.json (에이전트별 마켓플레이스 정의)
 ├── configs/
 │   ├── tmux/         # tmux.conf + manifest
 │   ├── tmuxinator/   # default.yml + manifest
@@ -67,7 +68,7 @@ pcfg rename    <type> <old> <new>
 pcfg doctor    [--prune]
 ```
 
-`<type>`: `skills` | `rules` | `hooks` | `mcps` | `configs` | `fonts` | `all` (생략 시 `all`)
+`<type>`: `skills` | `rules` | `hooks` | `mcps` | `plugins` | `configs` | `fonts` | `all` (생략 시 `all`)
 
 ### 예시
 
@@ -80,6 +81,9 @@ pcfg install rules my-rule
 
 # 단일 config 설치
 pcfg install configs tmux
+
+# 플러그인 전체 설치 (Claude Code 마켓플레이스 등록 + 설치)
+pcfg install plugins
 
 # 폰트 전체 설치 (다운로드 → ~/Library/Fonts/)
 pcfg install fonts
@@ -99,14 +103,17 @@ pcfg doctor --prune
 
 ## 지원 매트릭스
 
-| type   | Claude Code | Cursor | Codex |
-|--------|-------------|--------|-------|
-| rules  | ✓ symlink   | ✓ .mdc 변환 | ✓ AGENTS.md 섹션 |
-| skills | ✓ symlink   | ✓ symlink   | ✗ 미지원 |
-| hooks  | ✓ JSON merge | ✓ JSON merge | ✗ 미지원 |
-| mcps   | ✓ JSON merge (`~/.claude.json`) | ✓ JSON merge (`~/.cursor/mcp.json`) | ✓ TOML merge¹ |
+| type    | Claude Code | Cursor | Codex |
+|---------|-------------|--------|-------|
+| rules   | ✓ symlink   | ✓ .mdc 변환 | ✓ AGENTS.md 섹션 |
+| skills  | ✓ symlink   | ✓ symlink   | ✗ 미지원 |
+| hooks   | ✓ JSON merge | ✓ JSON merge | ✗ 미지원 |
+| mcps    | ✓ JSON merge (`~/.claude.json`) | ✓ JSON merge (`~/.cursor/mcp.json`) | ✓ TOML merge¹ |
+| plugins | ✓ `claude plugin install`² | ✗ 미지원 | ✗ 미지원 |
 
 > ¹ Codex는 stdio 방식(`command`/`args`)만 지원합니다. 원격 http 방식의 MCP는 `<name>.skip` 파일에 `codex`를 명시해 제외하세요.
+>
+> ² 현재는 Claude Code만 지원합니다. 정의 형식은 에이전트별 키 구조라 추후 다른 에이전트 확장과 동일 플러그인의 다중 에이전트 설치를 수용합니다.
 
 ## mcps JSON 형식
 
@@ -169,6 +176,30 @@ cp configs/zsh/zshenv.local.example ~/.zshenv.local
 `~/.zshenv.local`은 버전 관리에서 제외되는 머신별 파일이며, `~/.zshenv`에서 자동으로 source됩니다. `bin/install` 재실행 시에도 덮어써지지 않습니다.
 
 설치 후 Claude Code에서 `/mcp`로 연결 상태를 확인할 수 있습니다.
+
+## plugins JSON 형식
+
+각 `agents/plugins/<plugin>.json` 파일에 플러그인의 마켓플레이스 정보를 작성합니다.
+파일명이 플러그인 ID이며, 에이전트별 키 아래에 그 에이전트용 설치 정보를 둡니다.
+
+```json
+{
+  "claude": {
+    "marketplace": "claude-plugins-official",
+    "source": "anthropics/claude-plugins-official"
+  }
+}
+```
+
+| 필드 | 설명 |
+|------|------|
+| `<agent>` | 에이전트 키 (`claude` 등). 키가 없는 에이전트는 설치를 건너뜁니다 |
+| `marketplace` | `plugin@marketplace` 형식에 쓰는 마켓플레이스 이름 |
+| `source` | 마켓플레이스를 등록할 GitHub repo 또는 URL (`claude plugin marketplace add <source>`) |
+
+설치 시 마켓플레이스가 없으면 자동 등록한 뒤 플러그인을 설치하며, 이미 설치돼 있으면
+건너뜁니다(멱등). 설치 상태의 진실원은 에이전트 CLI가 보유하므로 `state.tsv`에는 기록하지
+않습니다. 동일 플러그인을 여러 에이전트에 설치하려면 키를 여러 개 둡니다.
 
 ## fonts source.json 형식
 
