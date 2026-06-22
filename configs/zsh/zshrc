@@ -28,7 +28,8 @@ zstyle ':fzf-tab:*' switch-group '<' '>'
 zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
 
 # Environment Variables
-export EDITOR='code'
+export PATH="$HOME/.local/bin:$PATH"
+export EDITOR='vim'
 export STARSHIP_CONFIG=~/.config/starship/starship.toml
 
 # Starship
