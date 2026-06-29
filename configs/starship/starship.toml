@@ -17,7 +17,7 @@ $character"""
 palette = 'manbo'
 
 [directory]
-fish_style_pwd_dir_length = 2
+# fish_style_pwd_dir_length = 2
 truncation_length = 1
 truncation_symbol = "…/"
 truncate_to_repo = false
