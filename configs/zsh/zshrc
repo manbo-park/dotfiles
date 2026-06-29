@@ -1,10 +1,12 @@
 # Aliases
 alias dv='cd ~/Desktop/dv'
+alias gb='git branch'
+alias gco='git checkout'
 alias gpl='git pull'
 alias gplo='git pull origin'
 alias gps='git push'
 alias gpso='git push origin'
-alias gco='git checkout'
+alias gs='git switch'
 alias mux='tmuxinator'
 
 # Plugins
