@@ -1,5 +1,7 @@
 name: ronnya
 root: ~/Desktop/dv/ronnya
+startup_window: 1
+startup_pane: 3
 
 windows:
   - ronnya:

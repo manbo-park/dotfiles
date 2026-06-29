@@ -1,5 +1,7 @@
 name: pctb
 root: ~/Desktop/dv/pctb
+startup_window: 1
+startup_pane: 3
 
 windows:
   - pctb:

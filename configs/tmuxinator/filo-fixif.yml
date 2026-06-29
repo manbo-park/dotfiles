@@ -1,8 +1,9 @@
 name: filo-fixif
+startup_window: 1
+startup_pane: 3
 
 windows:
   - filo:
-      focus: true
       root: ~/Desktop/dv/filo
       layout: "ddd5,200x50,0,0{100x50,0,0[100x25,0,0,0,100x24,0,26,1],99x50,101,0,2}"
       panes:

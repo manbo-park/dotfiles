@@ -1,5 +1,7 @@
 name: default
 root: <%= ENV['PWD'] %>
+startup_window: 1
+startup_pane: 1
 
 windows:
   - default:

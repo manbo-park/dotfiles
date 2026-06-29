@@ -1,5 +1,7 @@
 name: dotfiles
 root: ~/Desktop/dv/dotfiles
+startup_window: 1
+startup_pane: 2
 
 windows:
   - dotfiles:
