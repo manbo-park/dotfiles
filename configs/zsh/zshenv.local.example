@@ -4,5 +4,4 @@
 #   cp configs/zsh/zshenv.local.example ~/.zshenv.local
 #   ~/.zshenv.local 에 실제 값을 채워넣기
 
-# GitHub PAT — GitHub MCP 인증 (https://github.com/settings/personal-access-tokens)
-export GITHUB_PAT=""
+# 예: export SOME_API_KEY=""

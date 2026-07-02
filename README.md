@@ -152,30 +152,10 @@ pcfg doctor --prune
 특정 MCP를 일부 에이전트에서 제외하려면 같은 이름의 `.skip` 파일을 추가합니다:
 
 ```
-agents/mcps/github.skip   # 내용: codex
+agents/mcps/<name>.skip   # 내용: codex
 ```
 
 `.skip` 파일에는 제외할 에이전트 이름을 한 줄에 하나씩 작성합니다 (`claude` / `cursor` / `codex`).
-
-### GitHub MCP 설정
-
-`agents/mcps/github.json`은 GitHub 공식 원격 MCP 서버를 설정합니다.
-Claude Code와 Cursor에 설치되며, Codex는 stdio 미지원으로 자동 제외됩니다.
-
-**사전 준비 — GitHub PAT 발급 및 설정:**
-
-1. [GitHub 토큰 설정 페이지](https://github.com/settings/personal-access-tokens)에서 fine-grained token 생성
-2. 접근할 저장소에 대한 권한 부여
-3. `~/.zshenv.local` 생성 후 토큰 입력:
-
-```bash
-cp configs/zsh/zshenv.local.example ~/.zshenv.local
-# ~/.zshenv.local 열어서 GITHUB_PAT 값 입력
-```
-
-`~/.zshenv.local`은 버전 관리에서 제외되는 머신별 파일이며, `~/.zshenv`에서 자동으로 source됩니다. `bin/install` 재실행 시에도 덮어써지지 않습니다.
-
-설치 후 Claude Code에서 `/mcp`로 연결 상태를 확인할 수 있습니다.
 
 ## plugins JSON 형식
 
