@@ -1,0 +1,12 @@
+name: darkroom
+root: ~/Desktop/dv/darkroom
+startup_window: 1
+startup_pane: 3
+
+windows:
+  - term:
+      panes:
+        - clear
+  - agent:
+      panes:
+        - clear; claude --remote-control
