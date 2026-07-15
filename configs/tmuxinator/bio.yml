@@ -1,0 +1,12 @@
+name: bio
+root: ~/Desktop/dv/bio
+startup_window: 1
+startup_pane: 1
+
+windows:
+  - term:
+      panes:
+        - clear
+  - agent:
+      panes:
+        - clear; claude --remote-control

@@ -1,7 +1,7 @@
 name: darkroom
 root: ~/Desktop/dv/darkroom
 startup_window: 1
-startup_pane: 3
+startup_pane: 1
 
 windows:
   - term:
