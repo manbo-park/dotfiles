@@ -104,14 +104,52 @@ brew_ensure() {
   fi
 }
 
-check_deps() {
-  require_cmd jq
-  # TOML 변환: dasel 또는 python3(tomllib/tomli_w)
-  if ! command -v dasel &>/dev/null; then
-    if ! command -v python3 &>/dev/null; then
-      die "TOML 변환을 위해 'dasel' 또는 'python3'(tomllib/tomli_w) 가 필요합니다."
-    fi
+# ── Linux(apt) 의존성 확인 ────────────────────────────────────────────────────
+apt_ensure() {
+  local cmd="$1" pkg="${2:-$1}"
+  command -v "$cmd" &>/dev/null && return 0
+  if ! command -v apt-get &>/dev/null; then
+    die "'$cmd' 가 설치되어 있지 않고, apt-get도 없어 자동 설치할 수 없습니다. 수동으로 설치해주세요."
   fi
+  log_info "'$cmd' 가 없어 apt로 설치합니다..."
+  local sudo_cmd=()
+  [[ "$(id -u)" != "0" ]] && sudo_cmd=(sudo)
+  run_or_dry "${sudo_cmd[@]}" apt-get install -y "$pkg"
+}
+
+# gem(Ruby) 기반 도구 설치 — tmuxinator 등 apt 패키지가 불안정한 경우
+gem_ensure() {
+  local cmd="$1" gem_name="${2:-$1}"
+  command -v "$cmd" &>/dev/null && return 0
+  if ! command -v gem &>/dev/null; then
+    die "'$cmd' 설치에 ruby/gem이 필요합니다. 'sudo apt-get install ruby-full' 로 먼저 설치하세요."
+  fi
+  log_info "'$cmd' 가 없어 gem으로 설치합니다..."
+  run_or_dry gem install --user-install "$gem_name"
+}
+
+# starship 공식 설치 스크립트 (Linux apt 패키지가 배포판마다 없거나 오래됨)
+starship_ensure_linux() {
+  command -v starship &>/dev/null && return 0
+  command -v curl &>/dev/null || die "'starship' 설치에 curl이 필요합니다."
+  log_info "'starship' 이 없어 공식 설치 스크립트로 설치합니다..."
+  run_or_dry mkdir -p "${HOME}/.local/bin"
+  run_or_dry bash -c 'curl -sS https://starship.rs/install.sh | sh -s -- -b "$HOME/.local/bin" -y'
+}
+
+# zsh 플러그인(git clone 방식) 설치 — apt/brew에 없는 zsh 전용 플러그인용
+ZSH_PLUGIN_DIR="${HOME}/.zsh/plugins"
+zsh_plugin_ensure() {
+  local name="$1" repo="$2"
+  local dest="${ZSH_PLUGIN_DIR}/${name}"
+  [[ -d "$dest" ]] && return 0
+  command -v git &>/dev/null || die "'$name' 설치에 git이 필요합니다."
+  log_info "'$name' 플러그인이 없어 git clone으로 설치합니다..."
+  run_or_dry mkdir -p "$ZSH_PLUGIN_DIR"
+  run_or_dry git clone --depth 1 "$repo" "$dest"
+}
+
+check_deps_macos() {
   brew_ensure ghostty   ""                 ghostty   cask
   brew_ensure starship  ""                 starship
   brew_ensure tmux      ""                 tmux
@@ -120,6 +158,34 @@ check_deps() {
   brew_ensure im-select daipeihust/tap     im-select
   brew_ensure fzf       ""                 fzf
   brew_ensure fzf-tab   ""                 fzf-tab   lib
+}
+
+check_deps_linux() {
+  apt_ensure tmux
+  apt_ensure zsh
+  apt_ensure fzf
+  gem_ensure tmuxinator
+  starship_ensure_linux
+  zsh_plugin_ensure fzf-tab                https://github.com/Aloxaf/fzf-tab.git
+  zsh_plugin_ensure zsh-autosuggestions     https://github.com/zsh-users/zsh-autosuggestions.git
+  zsh_plugin_ensure zsh-syntax-highlighting https://github.com/zsh-users/zsh-syntax-highlighting.git
+  log_skip "ghostty: Linux/WSL에서는 자동 설치를 건너뜁니다 (WSL은 보통 Windows 호스트 쪽 터미널을 사용합니다)."
+  log_skip "im-select: macOS 전용 도구라 Linux/WSL에서는 건너뜁니다."
+}
+
+check_deps() {
+  require_cmd jq
+  # TOML 변환: dasel 또는 python3(tomllib/tomli_w)
+  if ! command -v dasel &>/dev/null; then
+    if ! command -v python3 &>/dev/null; then
+      die "TOML 변환을 위해 'dasel' 또는 'python3'(tomllib/tomli_w) 가 필요합니다."
+    fi
+  fi
+  case "$(uname -s)" in
+    Darwin) check_deps_macos ;;
+    Linux)  check_deps_linux ;;
+    *)      die "지원하지 않는 플랫폼입니다: $(uname -s)" ;;
+  esac
 }
 
 # ── PCFG 마커 ─────────────────────────────────────────────────────────────────

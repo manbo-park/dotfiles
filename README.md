@@ -5,15 +5,33 @@ tmux·zsh·ghostty 등 프로그램 설정 파일, 개발 폰트를 한곳에서
 
 ## 의존성
 
-| 도구 | 용도 | 설치 |
-|------|------|------|
-| `bash` 4+ | 스크립트 실행 | macOS: `brew install bash` |
-| `jq` | JSON merge/remove | `brew install jq` |
-| `dasel` 또는 `python3` | TOML 변환 (codex mcps) | `brew install dasel` 또는 시스템 python3 |
-| `curl` | 폰트 zip 다운로드 | macOS 기본 포함 |
-| `unzip` | 폰트 zip 압축 해제 | macOS 기본 포함 |
+macOS와 Linux(WSL 포함)를 모두 지원합니다. `pcfg install` 실행 시 플랫폼을 자동 감지해
+macOS는 Homebrew, Linux/WSL은 apt(+ 일부 gem/git clone/공식 설치 스크립트)로 부족한 도구를
+설치합니다.
+
+| 도구 | 용도 | macOS | Linux / WSL |
+|------|------|-------|-------------|
+| `bash` 4+ | 스크립트 실행 | `brew install bash` | 배포판 기본 포함 |
+| `jq` | JSON merge/remove | `brew install jq` | `apt install jq` |
+| `dasel` 또는 `python3` | TOML 변환 (codex mcps) | `brew install dasel` 또는 시스템 python3 | `apt install python3` (기본 포함인 경우 많음) |
+| `curl` | 폰트 zip 다운로드 | 기본 포함 | `apt install curl` |
+| `unzip` | 폰트 zip 압축 해제 | 기본 포함 | `apt install unzip` |
+| `git` | zsh 플러그인 clone (fzf-tab 등) | 기본 포함 | `apt install git` |
 
 > python3 사용 시 별도 패키지 설치 없이 내장 방식으로 변환합니다.
+
+### WSL 관련 참고사항
+
+- `ghostty`, `im-select`는 각각 GUI 터미널 앱 / macOS 입력소스 전환 도구라 Linux·WSL에서는
+  `check_deps`가 자동 설치를 건너뜁니다. WSL에서 Ghostty를 쓰려면 Windows 호스트 쪽에
+  별도로 설치하세요.
+- `tmuxinator`는 apt 패키지 대신 `gem install --user-install tmuxinator`로, `starship`은
+  공식 설치 스크립트(`https://starship.rs/install.sh`, `~/.local/bin`에 설치)로 설치합니다.
+- `fzf-tab`/`zsh-autosuggestions`/`zsh-syntax-highlighting`은 apt 패키지가 불안정하거나 없어
+  `~/.zsh/plugins/<name>`에 git clone으로 설치하고, `configs/zsh/zshrc`가 이 경로를 우선
+  source합니다(없으면 macOS Homebrew 경로로 폴백).
+- 폰트는 WSL 내부 `~/.local/share/fonts`에 설치되므로, Windows Terminal 등 Windows 쪽
+  터미널에서 사용하려면 같은 Nerd Font를 Windows에도 별도로 설치해야 합니다.
 
 ## 디렉토리 구조
 

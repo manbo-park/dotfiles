@@ -10,13 +10,25 @@ alias gs='git switch'
 alias mux='tmuxinator'
 
 # Plugins
-## fzf-tab
+## fzf-tab / zsh-autosuggestions / zsh-syntax-highlighting
+## pcfg가 git clone으로 설치한 경로(~/.zsh/plugins)를 우선 사용하고,
+## 없으면 macOS(Homebrew) 경로로 폴백한다.
 autoload -U compinit; compinit
-source $(brew --prefix)/share/fzf-tab/fzf-tab.zsh
-# zsh-autosuggestions
-source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-# zsh-syntax-highlighting
-source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+_zsh_plugin_source() {
+  local name="$1" file="$2"
+  local cloned="${HOME}/.zsh/plugins/${name}/${file}"
+  if [[ -f "$cloned" ]]; then
+    source "$cloned"
+  elif command -v brew &>/dev/null && [[ -f "$(brew --prefix)/share/${name}/${file}" ]]; then
+    source "$(brew --prefix)/share/${name}/${file}"
+  fi
+}
+
+_zsh_plugin_source fzf-tab fzf-tab.zsh
+_zsh_plugin_source zsh-autosuggestions zsh-autosuggestions.zsh
+_zsh_plugin_source zsh-syntax-highlighting zsh-syntax-highlighting.zsh
+unfunction _zsh_plugin_source
 
 # fzf-tab configurations
 zstyle ':completion:*:git-checkout:*' sort false
