@@ -9,6 +9,16 @@ alias gpso='git push origin'
 alias gs='git switch'
 alias mux='tmuxinator'
 
+# WSL: ssh-agent 자동 시작
+## WSL은 터미널 세션이 끝나면 ssh-agent도 함께 죽는 경우가 많아,
+## 세션마다 SSH_AUTH_SOCK이 비어 있으면 새로 띄우고 키를 등록한다.
+if grep -qi microsoft /proc/version 2>/dev/null; then
+  if [ -z "$SSH_AUTH_SOCK" ]; then
+    eval "$(ssh-agent -s)" > /dev/null
+    ssh-add ~/.ssh/id_ed25519 2>/dev/null
+  fi
+fi
+
 # Plugins
 ## fzf-tab / zsh-autosuggestions / zsh-syntax-highlighting
 ## pcfg가 git clone으로 설치한 경로(~/.zsh/plugins)를 우선 사용하고,
