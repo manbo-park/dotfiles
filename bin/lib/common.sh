@@ -150,6 +150,7 @@ zsh_plugin_ensure() {
 }
 
 check_deps_macos() {
+  brew_ensure jq        ""                 jq
   brew_ensure ghostty   ""                 ghostty   cask
   brew_ensure starship  ""                 starship
   brew_ensure tmux      ""                 tmux
@@ -161,6 +162,7 @@ check_deps_macos() {
 }
 
 check_deps_linux() {
+  apt_ensure jq
   apt_ensure tmux
   apt_ensure zsh
   apt_ensure fzf
@@ -174,18 +176,18 @@ check_deps_linux() {
 }
 
 check_deps() {
-  require_cmd jq
-  # TOML 변환: dasel 또는 python3(tomllib/tomli_w)
-  if ! command -v dasel &>/dev/null; then
-    if ! command -v python3 &>/dev/null; then
-      die "TOML 변환을 위해 'dasel' 또는 'python3'(tomllib/tomli_w) 가 필요합니다."
-    fi
-  fi
   case "$(uname -s)" in
     Darwin) check_deps_macos ;;
     Linux)  check_deps_linux ;;
     *)      die "지원하지 않는 플랫폼입니다: $(uname -s)" ;;
   esac
+
+  # TOML 변환: dasel 또는 python3(tomllib/tomli_w) — 배포판마다 패키지명이 갈려 자동 설치는 하지 않는다.
+  if ! command -v dasel &>/dev/null; then
+    if ! command -v python3 &>/dev/null; then
+      die "TOML 변환을 위해 'dasel' 또는 'python3'(tomllib/tomli_w) 가 필요합니다."
+    fi
+  fi
 }
 
 # ── 플랫폼 판별 ───────────────────────────────────────────────────────────────
