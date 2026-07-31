@@ -10,6 +10,7 @@ SUPPORTED_AGENTS_skills="claude cursor"
 SUPPORTED_AGENTS_hooks="claude cursor"
 SUPPORTED_AGENTS_mcps="claude cursor codex vscode"
 SUPPORTED_AGENTS_plugins="claude"
+SUPPORTED_AGENTS_settings="claude"
 
 # 해당 type 을 지원하는 에이전트 목록 반환
 supported_agents() {
@@ -35,6 +36,7 @@ target_dest() {
     mcps:cursor)   echo "$HOME/.cursor/mcp.json" ;;          # .mcpServers 키에 merge
     mcps:codex)    echo "$HOME/.codex/config.toml" ;;        # [mcp_servers.<name>] merge
     mcps:vscode)   echo "$HOME/Library/Application Support/Code/User/mcp.json" ;; # .servers 키에 merge
+    settings:claude) echo "$HOME/.claude/settings.json" ;;  # 최상위 키에 merge
     *)             echo "" ;;
   esac
 }
@@ -56,6 +58,7 @@ target_mechanism() {
     mcps:codex)    echo "merge-toml" ;; # TOML [mcp_servers.<name>]
     mcps:vscode)   echo "merge-env" ;;  # JSON .servers 키, ${VAR} → ${env:VAR} 변환
     plugins:claude) echo "plugin" ;;    # claude plugin install (파일 dest 없음)
+    settings:claude) echo "merge" ;;    # JSON 최상위 키
     *)             echo "" ;;
   esac
 }
@@ -70,6 +73,7 @@ target_merge_key() {
     mcps:claude)   echo "mcpServers" ;;
     mcps:cursor)   echo "mcpServers" ;;
     mcps:vscode)   echo "servers" ;;
+    settings:claude) echo "" ;;      # 최상위 (중첩 키 없음)
     *)             echo "" ;;
   esac
 }

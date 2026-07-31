@@ -57,7 +57,7 @@ _parse_common_flags() {
 }
 
 # ── type 목록 ─────────────────────────────────────────────────────────────────
-ALL_AGENT_TYPES="rules skills hooks mcps plugins"
+ALL_AGENT_TYPES="rules skills hooks mcps plugins settings"
 ALL_TYPES="${ALL_AGENT_TYPES} configs fonts"
 
 _expand_type() {
@@ -436,7 +436,7 @@ cmd_rename() {
   # rules 는 파일(.md), skills/hooks 는 디렉토리, mcps 는 파일(.json)
   local ext=""
   [[ "$type" == "rules" ]] && ext=".md"
-  [[ "$type" == "mcps"  ]] && ext=".json"
+  [[ "$type" == "mcps" || "$type" == "settings" ]] && ext=".json"
 
   local old_path="${REPO_ROOT}/agents/${type}/${old}${ext}"
   local new_path="${REPO_ROOT}/agents/${type}/${new}${ext}"
@@ -500,7 +500,7 @@ usage() {
   pcfg rename    <type> <old> <new>
   pcfg doctor    [--prune]
 
-<type>: skills | rules | hooks | mcps | plugins | configs | fonts | all (생략=all)
+<type>: skills | rules | hooks | mcps | plugins | settings | configs | fonts | all (생략=all)
 EOF
   exit 1
 }

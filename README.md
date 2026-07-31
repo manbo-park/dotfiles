@@ -56,7 +56,8 @@ dotfiles/
 │   ├── skills/       # <name>/ (디렉토리)
 │   ├── hooks/        # <name>/ (hook.json + scripts)
 │   ├── mcps/         # <name>.json [, <name>.skip]
-│   └── plugins/      # <name>.json (에이전트별 마켓플레이스 정의)
+│   ├── plugins/      # <name>.json (에이전트별 마켓플레이스 정의)
+│   └── settings/     # <key>.json (settings.json 최상위 키 = 파일명, 값 = 내용)
 ├── configs/
 │   ├── tmux/         # tmux.conf + manifest
 │   ├── tmuxinator/   # default.yml + manifest
@@ -95,7 +96,7 @@ pcfg rename    <type> <old> <new>
 pcfg doctor    [--prune]
 ```
 
-`<type>`: `skills` | `rules` | `hooks` | `mcps` | `plugins` | `configs` | `fonts` | `all` (생략 시 `all`)
+`<type>`: `skills` | `rules` | `hooks` | `mcps` | `plugins` | `settings` | `configs` | `fonts` | `all` (생략 시 `all`)
 
 ### 예시
 
@@ -137,10 +138,24 @@ pcfg doctor --prune
 | hooks   | ✓ JSON merge | ✓ JSON merge | ✗ 미지원 |
 | mcps    | ✓ JSON merge (`~/.claude.json`) | ✓ JSON merge (`~/.cursor/mcp.json`) | ✓ TOML merge¹ |
 | plugins | ✓ `claude plugin install`² | ✗ 미지원 | ✗ 미지원 |
+| settings | ✓ JSON merge (`~/.claude/settings.json` 최상위) | ✗ 미지원 | ✗ 미지원 |
 
 > ¹ Codex는 stdio 방식(`command`/`args`)만 지원합니다. 원격 http 방식의 MCP는 `<name>.skip` 파일에 `codex`를 명시해 제외하세요.
 >
 > ² 현재는 Claude Code만 지원합니다. 정의 형식은 에이전트별 키 구조라 추후 다른 에이전트 확장과 동일 플러그인의 다중 에이전트 설치를 수용합니다.
+
+## settings JSON 형식
+
+`agents/settings/<key>.json` 의 **파일명이 `~/.claude/settings.json` 의 최상위 키**, **파일 내용이 그 값**입니다.
+기존 사용자 설정과 `hooks`/`mcps` merge 결과는 그대로 보존됩니다.
+
+```
+agents/settings/includeCoAuthoredBy.json   # 내용: false
+→ ~/.claude/settings.json 에 "includeCoAuthoredBy": false 삽입
+```
+
+`includeCoAuthoredBy: false` 는 Claude Code가 커밋 메시지에 붙이는 `Co-Authored-By` 꼬리말과
+PR 본문의 생성 안내 문구를 제거합니다.
 
 ## mcps JSON 형식
 
