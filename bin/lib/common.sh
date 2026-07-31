@@ -180,6 +180,7 @@ check_deps_macos() {
   brew_ensure fzf       ""                 fzf
   brew_ensure fzf-tab   ""                 fzf-tab   lib
   brew_ensure gh        ""                 gh
+  brew_ensure node      ""                 node
 }
 
 check_deps_linux() {
@@ -187,6 +188,7 @@ check_deps_linux() {
   apt_ensure tmux
   apt_ensure zsh
   apt_ensure fzf
+  apt_ensure node nodejs
   gem_ensure tmuxinator
   starship_ensure_linux
   gh_ensure_linux
