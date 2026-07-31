@@ -53,6 +53,14 @@ zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
 
 # Environment Variables
 export PATH="$HOME/.local/bin:$PATH"
+
+## gem --user-install(Linux/WSL의 tmuxinator 등)로 설치된 실행 파일 경로를 PATH에 추가
+if command -v ruby &>/dev/null; then
+  _gem_user_bin="$(ruby -e 'print Gem.user_dir' 2>/dev/null)/bin"
+  [[ -d "$_gem_user_bin" ]] && export PATH="$_gem_user_bin:$PATH"
+  unset _gem_user_bin
+fi
+
 export EDITOR='vim'
 export STARSHIP_CONFIG=~/.config/starship/starship.toml
 
