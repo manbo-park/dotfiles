@@ -197,6 +197,10 @@ _install_configs() {
   [[ -z "$progs" ]] && { log_info "설치할 configs 가 없습니다."; return; }
 
   for prog in $progs; do
+    if [[ -f "${REPO_ROOT}/configs/${prog}/.macos-only" ]] && ! is_macos; then
+      log_skip "${prog}: macOS 전용 설정이라 건너뜁니다."
+      continue
+    fi
     while IFS=$'\t' read -r abs_src dest; do
       symlink_install "configs" "_" "$prog" "$abs_src" "$dest"
     done < <(configs_pairs "$prog")
