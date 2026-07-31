@@ -4,10 +4,14 @@
 # 의존: common.sh, state.sh (require_cmd, backup_if_exists, is_dry,
 #        run_or_dry, log_*, state_record, state_remove, timestamp)
 
+# ── 내부: top-key 유무에 따른 jq 경로 ────────────────────────────────────────
+# $top 이 빈 문자열이면 [$key], 아니면 [$top, $key] 를 $p 로 바인딩한다.
+_JQ_PATH_EXPR='(if $top == "" then [$key] else [$top, $key] end) as $p'
+
 # ── JSON merge ────────────────────────────────────────────────────────────────
 # json_merge <settings-json> <top-key> <name> <fragment-json>
 #   settings-json: ~/.claude/settings.json 등
-#   top-key: "mcpServers" | "hooks"
+#   top-key: "mcpServers" | "hooks" | "" (빈 값이면 최상위 키에 직접 merge)
 #   name: 아이템 이름 (키 식별자)
 #   fragment-json: 아이템 정의 JSON 파일 경로 또는 inline JSON 문자열
 json_merge() {
@@ -26,7 +30,7 @@ json_merge() {
   if [[ -f "$settings" ]]; then
     local same
     same="$(jq --argjson val "$payload" --arg key "$name" --arg top "$top_key" \
-      'if (.[$top][$key]) == $val then "yes" else "no" end' "$settings" 2>/dev/null || echo no)"
+      "$_JQ_PATH_EXPR"' | if (getpath($p)) == $val then "yes" else "no" end' "$settings" 2>/dev/null || echo no)"
     if [[ "$same" == '"yes"' ]]; then
       log_skip "json-merge [${top_key}.${name}]: ${settings} (이미 최신 내용)"
       return
@@ -51,11 +55,11 @@ json_merge() {
       backup="$tmp_bak"
     fi
 
-    # jq: .<top_key>.<name> = <payload>
+    # jq: .<top_key>.<name> = <payload> (top_key 가 비면 .<name> = <payload>)
     jq --argjson val "$payload" \
        --arg key "$name" \
        --arg top "$top_key" \
-       '.[$top] //= {} | .[$top][$key] = $val' \
+       "$_JQ_PATH_EXPR"' | setpath($p; $val)' \
        "$src" > "$settings"
 
     state_record "${_CURRENT_TYPE:-merge}" "${_CURRENT_AGENT:-unknown}" \
@@ -79,7 +83,7 @@ json_remove() {
 
   # 키가 존재하는지 확인
   local exists; exists="$(jq --arg top "$top_key" --arg key "$name" \
-    'if .[$top][$key] then "yes" else "no" end' "$settings" 2>/dev/null || echo "no")"
+    "$_JQ_PATH_EXPR"' | if (getpath($p)) != null then "yes" else "no" end' "$settings" 2>/dev/null || echo "no")"
   if [[ "$exists" != '"yes"' ]]; then
     log_skip "[${top_key}.${name}] 키가 없습니다 — 건너뜁니다."
     return
@@ -91,7 +95,7 @@ json_remove() {
 
     local tmp; tmp="$(mktemp)"
     jq --arg top "$top_key" --arg key "$name" \
-       'del(.[$top][$key])' "$settings" > "$tmp"
+       "$_JQ_PATH_EXPR"' | delpaths([$p])' "$settings" > "$tmp"
     mv "$tmp" "$settings"
 
     if [[ "$restore" == "--restore" && -n "$backup" && -e "$backup" ]]; then
