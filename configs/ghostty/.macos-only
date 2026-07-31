@@ -1,0 +1,2 @@
+# 이 마커 파일이 있으면 `pcfg install configs`가 macOS가 아닌 환경에서 이 설정을 건너뜁니다.
+# ghostty는 macOS 전용 GUI 터미널 앱이라 Linux/WSL에는 설치 대상이 없습니다.
