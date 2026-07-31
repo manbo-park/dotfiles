@@ -137,6 +137,26 @@ starship_ensure_linux() {
   run_or_dry bash -c 'curl -sS https://starship.rs/install.sh | sh -s -- -b "$HOME/.local/bin" -y'
 }
 
+# GitHub CLI 설치 — Ubuntu 기본 저장소의 gh는 버전이 오래되어 공식 apt 저장소를 등록해 설치한다.
+gh_ensure_linux() {
+  command -v gh &>/dev/null && return 0
+  command -v apt-get &>/dev/null || die "'gh' 자동 설치에 apt-get이 필요합니다. https://github.com/cli/cli#installation 를 참고해 수동 설치하세요."
+  command -v curl &>/dev/null || die "'gh' 설치에 curl이 필요합니다."
+  log_info "'gh' 가 없어 GitHub 공식 apt 저장소를 등록하고 설치합니다..."
+
+  local sudo_s=""
+  [[ "$(id -u)" != "0" ]] && sudo_s="sudo"
+  local keyring="/etc/apt/keyrings/githubcli-archive-keyring.gpg"
+  local arch; arch="$(dpkg --print-architecture)"
+
+  run_or_dry bash -c "${sudo_s} mkdir -p -m 755 /etc/apt/keyrings"
+  run_or_dry bash -c "curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | ${sudo_s} tee '${keyring}' >/dev/null"
+  run_or_dry bash -c "${sudo_s} chmod go+r '${keyring}'"
+  run_or_dry bash -c "echo 'deb [arch=${arch} signed-by=${keyring}] https://cli.github.com/packages stable main' | ${sudo_s} tee /etc/apt/sources.list.d/github-cli.list >/dev/null"
+  run_or_dry bash -c "${sudo_s} apt-get update"
+  run_or_dry bash -c "${sudo_s} apt-get install -y gh"
+}
+
 # zsh 플러그인(git clone 방식) 설치 — apt/brew에 없는 zsh 전용 플러그인용
 ZSH_PLUGIN_DIR="${HOME}/.zsh/plugins"
 zsh_plugin_ensure() {
@@ -159,6 +179,7 @@ check_deps_macos() {
   brew_ensure im-select daipeihust/tap     im-select
   brew_ensure fzf       ""                 fzf
   brew_ensure fzf-tab   ""                 fzf-tab   lib
+  brew_ensure gh        ""                 gh
 }
 
 check_deps_linux() {
@@ -168,6 +189,7 @@ check_deps_linux() {
   apt_ensure fzf
   gem_ensure tmuxinator
   starship_ensure_linux
+  gh_ensure_linux
   zsh_plugin_ensure fzf-tab                https://github.com/Aloxaf/fzf-tab.git
   zsh_plugin_ensure zsh-autosuggestions     https://github.com/zsh-users/zsh-autosuggestions.git
   zsh_plugin_ensure zsh-syntax-highlighting https://github.com/zsh-users/zsh-syntax-highlighting.git

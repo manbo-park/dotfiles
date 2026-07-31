@@ -17,6 +17,7 @@ macOS는 Homebrew, Linux/WSL은 apt(+ 일부 gem/git clone/공식 설치 스크�
 | `curl` | 폰트 zip 다운로드 | 기본 포함 | `apt install curl` |
 | `unzip` | 폰트 zip 압축 해제 | 기본 포함 | `apt install unzip` |
 | `git` | zsh 플러그인 clone (fzf-tab 등) | 기본 포함 | `apt install git` |
+| `gh` | GitHub CLI (PR·이슈 작업) | `brew install gh` | GitHub 공식 apt 저장소 (자동 등록) |
 
 > python3 사용 시 별도 패키지 설치 없이 내장 방식으로 변환합니다.
 
@@ -27,6 +28,9 @@ macOS는 Homebrew, Linux/WSL은 apt(+ 일부 gem/git clone/공식 설치 스크�
   별도로 설치하세요.
 - `tmuxinator`는 apt 패키지 대신 `gem install --user-install tmuxinator`로, `starship`은
   공식 설치 스크립트(`https://starship.rs/install.sh`, `~/.local/bin`에 설치)로 설치합니다.
+- `gh`는 Ubuntu 기본 저장소 버전이 오래되어(24.04 기준 2.45.0) `apt install gh` 대신 GitHub
+  공식 apt 저장소(`https://cli.github.com/packages`)를 등록해 최신 버전을 설치합니다. 저장소
+  등록과 설치에 `sudo` 권한이 필요합니다.
 - `fzf-tab`/`zsh-autosuggestions`/`zsh-syntax-highlighting`은 apt 패키지가 불안정하거나 없어
   `~/.zsh/plugins/<name>`에 git clone으로 설치하고, `configs/zsh/zshrc`가 이 경로를 우선
   source합니다(없으면 macOS Homebrew 경로로 폴백).
