@@ -1,0 +1,6 @@
+{
+  "claude": {
+    "marketplace": "dotfiles-local",
+    "source": "./agents/plugins/local"
+  }
+}

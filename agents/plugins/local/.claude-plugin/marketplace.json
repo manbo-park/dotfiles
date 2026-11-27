@@ -1,0 +1,11 @@
+{
+  "name": "dotfiles-local",
+  "owner": { "name": "dotfiles" },
+  "plugins": [
+    {
+      "name": "session-tools",
+      "source": "./session-tools",
+      "description": "세션 이름 요약(retitle)과 세션 간 맥락 전달(send-context)"
+    }
+  ]
+}

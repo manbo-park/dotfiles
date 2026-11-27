@@ -1,0 +1,5 @@
+{
+  "name": "session-tools",
+  "version": "1.0.0",
+  "description": "세션 이름 요약(retitle)과 세션 간 맥락 전달(send-context)"
+}

@@ -18,6 +18,7 @@ macOS는 Homebrew, Linux/WSL은 apt(+ 일부 gem/git clone/공식 설치 스크�
 | `git` | zsh 플러그인 clone (fzf-tab 등) | 기본 포함 | `apt install git` |
 | `gh` | GitHub CLI (PR·이슈 작업) | `brew install gh` | GitHub 공식 apt 저장소 (자동 등록) |
 | `node` | 에이전트 플러그인 훅 실행 (ponytail 등) | `brew install node` | `apt install nodejs` |
+| `python3` | 로컬 플러그인 훅 실행 (session-tools) | 시스템 python3 | `apt install python3` (기본 포함인 경우 많음) |
 
 ### WSL 관련 참고사항
 
@@ -53,7 +54,7 @@ dotfiles/
 │   ├── skills/       # <name>/ (디렉토리)
 │   ├── hooks/        # <name>/ (hook.json + scripts)
 │   ├── mcps/         # <name>.json
-│   ├── plugins/      # <name>.json (마켓플레이스 정의)
+│   ├── plugins/      # <name>.json (마켓플레이스 정의), local/ (로컬 마켓플레이스)
 │   └── settings/     # <key>.json (settings.json 최상위 키 = 파일명, 값 = 내용)
 ├── configs/
 │   ├── tmux/         # tmux.conf + manifest
@@ -196,7 +197,16 @@ PR 본문의 생성 안내 문구를 제거합니다.
 | 필드 | 설명 |
 |------|------|
 | `marketplace` | `plugin@marketplace` 형식에 쓰는 마켓플레이스 이름 |
-| `source` | 마켓플레이스를 등록할 GitHub repo 또는 URL (`claude plugin marketplace add <source>`) |
+| `source` | 마켓플레이스를 등록할 GitHub repo 또는 URL (`claude plugin marketplace add <source>`). `./`로 시작하면 저장소 루트 기준 로컬 경로 |
+
+### 로컬 플러그인
+
+직접 만든 플러그인은 `agents/plugins/local/`(마켓플레이스 `dotfiles-local`)에 두고, 정의 파일의
+`source`를 `"./agents/plugins/local"`로 적습니다. 훅·스크립트와 묶여 동작하는 것만 플러그인으로
+만들고, 단독으로 동작하는 스킬은 `agents/skills/`에 둡니다(symlink라 수정이 즉시 반영됨).
+
+원본을 고친 뒤에는 `/plugin marketplace update dotfiles-local` 후
+`/plugin update <plugin>@dotfiles-local`로 반영합니다.
 
 설치 시 마켓플레이스가 없으면 자동 등록한 뒤 플러그인을 설치하며, 이미 설치돼 있으면
 건너뜁니다(멱등). 설치 상태의 진실원은 에이전트 CLI가 보유하므로 `state.tsv`에는 기록하지
