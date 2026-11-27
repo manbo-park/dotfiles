@@ -3,9 +3,9 @@
   "owner": { "name": "dotfiles" },
   "plugins": [
     {
-      "name": "session-tools",
-      "source": "./session-tools",
-      "description": "세션 이름 요약(retitle)과 세션 간 맥락 전달(send-context)"
+      "name": "dotfiles",
+      "source": "./dotfiles",
+      "description": "dotfiles에서 관리하는 자작 Claude Code 스킬·훅 모음"
     }
   ]
 }

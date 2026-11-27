@@ -18,7 +18,7 @@ macOS는 Homebrew, Linux/WSL은 apt(+ 일부 gem/git clone/공식 설치 스크�
 | `git` | zsh 플러그인 clone (fzf-tab 등) | 기본 포함 | `apt install git` |
 | `gh` | GitHub CLI (PR·이슈 작업) | `brew install gh` | GitHub 공식 apt 저장소 (자동 등록) |
 | `node` | 에이전트 플러그인 훅 실행 (ponytail 등) | `brew install node` | `apt install nodejs` |
-| `python3` | 로컬 플러그인 훅 실행 (session-tools) | 시스템 python3 | `apt install python3` (기본 포함인 경우 많음) |
+| `python3` | 로컬 플러그인 훅 실행 (dotfiles 플러그인) | 시스템 python3 | `apt install python3` (기본 포함인 경우 많음) |
 
 ### WSL 관련 참고사항
 

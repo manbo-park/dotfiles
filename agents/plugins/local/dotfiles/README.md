@@ -1,6 +1,6 @@
-# session-tools
+# dotfiles 플러그인
 
-Claude Code 세션 관리 스킬 모음 (dotfiles 로컬 마켓플레이스 `dotfiles-local`).
+dotfiles에서 관리하는 자작 Claude Code 스킬·훅 모음 (로컬 마켓플레이스 `dotfiles-local`).
 
 - `/retitle`: 대화를 한국어로 요약해 세션 이름을 바꾼다. 플랜·구현 단계면 `[plan] 요약`·`[impl] 요약`.
 - `/send-context <설명> [-t 세션명] [-n [세션명]]`: 이 세션의 맥락 일부를 다른 세션에 전달한다.
@@ -8,10 +8,10 @@ Claude Code 세션 관리 스킬 모음 (dotfiles 로컬 마켓플레이스 `dot
 ## 설치
 
 ```bash
-pcfg install plugins session-tools
+pcfg install plugins dotfiles
 ```
 
-설치 후 Claude Code를 재시작한다. 원본을 고친 뒤에는 `/plugin marketplace update dotfiles-local` 후 `/plugin update session-tools@dotfiles-local`.
+설치 후 Claude Code를 재시작한다. 원본을 고친 뒤에는 `/plugin marketplace update dotfiles-local` 후 `/plugin update dotfiles@dotfiles-local`.
 
 ## 요구 사항
 

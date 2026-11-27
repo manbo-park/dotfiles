@@ -14,7 +14,7 @@ import sys
 DONE_PREFIX = "세션 이름을 「"  # 성공 응답 문구. 다음 실행의 요약 입력에서 제외한다
 
 data = json.load(sys.stdin)
-# 플러그인 스킬은 `/session-tools:retitle` 형태로도 입력될 수 있다
+# 플러그인 스킬은 `/dotfiles:retitle` 형태로도 입력될 수 있다
 if not re.match(r"^/(?:[\w-]+:)?retitle\s*$", data.get("prompt", "").strip()):
     sys.exit(0)
 
