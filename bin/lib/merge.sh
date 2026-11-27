@@ -11,7 +11,7 @@ _JQ_PATH_EXPR='(if $top == "" then [$key] else [$top, $key] end) as $p'
 # ── JSON merge ────────────────────────────────────────────────────────────────
 # json_merge <settings-json> <top-key> <name> <fragment-json>
 #   settings-json: ~/.claude/settings.json 등
-#   top-key: "mcpServers" | "hooks" | "" (빈 값이면 최상위 키에 직접 merge)
+#   top-key: "mcpServers" | "" (빈 값이면 최상위 키에 직접 merge)
 #   name: 아이템 이름 (키 식별자)
 #   fragment-json: 아이템 정의 JSON 파일 경로 또는 inline JSON 문자열
 json_merge() {

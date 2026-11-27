@@ -56,7 +56,7 @@ _parse_common_flags() {
 AGENT="claude"
 
 # ── type 목록 ─────────────────────────────────────────────────────────────────
-ALL_AGENT_TYPES="rules skills hooks mcps plugins settings"
+ALL_AGENT_TYPES="rules mcps plugins settings"
 ALL_TYPES="${ALL_AGENT_TYPES} configs fonts"
 
 _expand_type() {
@@ -140,10 +140,8 @@ _install_one() {
 
   case "$mechanism" in
     symlink)
-      # rules 는 .md 파일 자체를 symlink, skills 는 디렉토리
-      local actual_src="$src"
-      [[ "$type" == "rules" ]] && actual_src="${src}.md"
-      symlink_install "$type" "$agent" "$name" "$actual_src" "$dest"
+      # rules: .md 파일 자체를 symlink
+      symlink_install "$type" "$agent" "$name" "${src}.md" "$dest"
       ;;
     merge)
       local top_key; top_key="$(target_merge_key "$type" "$agent")"
@@ -379,7 +377,7 @@ cmd_rename() {
   [[ -z "$type" || -z "$old" || -z "$new" ]] && \
     die "사용법: pcfg rename <type> <old> <new>"
 
-  # rules 는 파일(.md), skills/hooks 는 디렉토리, mcps 는 파일(.json)
+  # rules 는 파일(.md), mcps·settings 는 파일(.json)
   local ext=""
   [[ "$type" == "rules" ]] && ext=".md"
   [[ "$type" == "mcps" || "$type" == "settings" ]] && ext=".json"
@@ -446,7 +444,7 @@ usage() {
   pcfg rename    <type> <old> <new>
   pcfg doctor    [--prune]
 
-<type>: skills | rules | hooks | mcps | plugins | settings | configs | fonts | all (생략=all)
+<type>: rules | mcps | plugins | settings | configs | fonts | all (생략=all)
 EOF
   exit 1
 }

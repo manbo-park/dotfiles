@@ -8,8 +8,6 @@ target_dest() {
   local type="$1" agent="$2" name="$3"
   case "${type}:${agent}" in
     rules:claude)  echo "$HOME/.claude/rules/${name}.md" ;;
-    skills:claude) echo "$HOME/.claude/skills/${name}" ;;
-    hooks:claude)  echo "$HOME/.claude/settings.json" ;;     # .hooks 키에 merge
     mcps:claude)   echo "$HOME/.claude.json" ;;               # .mcpServers 키에 merge
     settings:claude) echo "$HOME/.claude/settings.json" ;;  # 최상위 키에 merge
     *)             echo "" ;;
@@ -22,8 +20,6 @@ target_mechanism() {
   local type="$1" agent="$2"
   case "${type}:${agent}" in
     rules:claude)  echo "symlink" ;;
-    skills:claude) echo "symlink" ;;
-    hooks:claude)  echo "merge" ;;      # JSON .hooks 키
     mcps:claude)   echo "merge" ;;      # JSON .mcpServers 키
     plugins:claude) echo "plugin" ;;    # claude plugin install (파일 dest 없음)
     settings:claude) echo "merge" ;;    # JSON 최상위 키
@@ -36,7 +32,6 @@ target_mechanism() {
 target_merge_key() {
   local type="$1" agent="$2"
   case "${type}:${agent}" in
-    hooks:claude)  echo "hooks" ;;
     mcps:claude)   echo "mcpServers" ;;
     settings:claude) echo "" ;;      # 최상위 (중첩 키 없음)
     *)             echo "" ;;

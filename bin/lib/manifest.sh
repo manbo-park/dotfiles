@@ -40,11 +40,6 @@ list_agent_items() {
         raw_names+=("$(basename "$f" .md)")
       done < <(find "$dir" -maxdepth 1 -name '*.md' -not -name '.gitkeep' | sort)
       ;;
-    skills|hooks)
-      while IFS= read -r f; do
-        raw_names+=("$(basename "$f")")
-      done < <(find "$dir" -maxdepth 1 -mindepth 1 -type d | sort)
-      ;;
     mcps|plugins|settings)
       while IFS= read -r f; do
         raw_names+=("$(basename "$f" .json)")
