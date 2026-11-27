@@ -8,6 +8,7 @@ alias gps='git push'
 alias gpso='git push origin'
 alias gs='git switch'
 alias mux='tmuxinator'
+alias ch='claude-history'
 
 # WSL: ssh-agent 자동 시작
 ## WSL은 터미널 세션이 끝나면 ssh-agent도 함께 죽는 경우가 많아,
@@ -66,3 +67,21 @@ export STARSHIP_CONFIG=~/.config/starship/starship.toml
 
 # Starship
 eval "$(starship init zsh)"
+
+# nvm: nvm.sh 로드(약 0.45초)를 셸 시작에서 빼고, 기본 버전 node 만 PATH 에 바로 넣는다.
+# nvm 명령은 처음 실행할 때 불러온다. node 는 PATH 로 잡히므로 훅 같은 하위 프로세스도 같은 버전을 쓴다.
+export NVM_DIR="$HOME/.nvm"
+if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+  # ponytail: alias/default 가 버전(24, v24.1.0 등)일 때만 해석한다. lts/* 같은 별칭이면 nvm 을 한 번 실행해야 기본 버전이 잡힌다
+  if [[ -r "$NVM_DIR/alias/default" ]]; then
+    _nvm_bin=("$NVM_DIR"/versions/node/v${$(<"$NVM_DIR/alias/default")#v}*(N/nOn[1]))
+    [[ -n "$_nvm_bin" ]] && path=("$_nvm_bin/bin" $path)
+    unset _nvm_bin
+  fi
+  nvm() {
+    unfunction nvm
+    . "$NVM_DIR/nvm.sh"
+    [[ -s "$NVM_DIR/bash_completion" ]] && . "$NVM_DIR/bash_completion"
+    nvm "$@"
+  }
+fi

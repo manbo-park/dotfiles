@@ -1,0 +1,11 @@
+{
+  "name": "dotfiles-local",
+  "owner": { "name": "dotfiles" },
+  "plugins": [
+    {
+      "name": "dotfiles",
+      "source": "./dotfiles",
+      "description": "dotfiles에서 관리하는 자작 Claude Code 스킬·훅 모음"
+    }
+  ]
+}

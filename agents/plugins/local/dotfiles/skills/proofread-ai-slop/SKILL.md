@@ -38,8 +38,10 @@ issues:
 ### Step 1: 정량 스캔
 
 ```bash
-python3 ~/.claude/skills/proofread-ai-slop/detect.py {doc_path}
+python3 "<base directory>/detect.py" {doc_path}
 ```
+
+`<base directory>`는 스킬을 불러올 때 안내되는 이 SKILL.md의 디렉토리다.
 
 16개 지표를 집계하고 임계값 초과 항목에 `!`를 표시한다. `--json`으로 기계 판독형 출력.
 
@@ -84,7 +86,7 @@ python3 ~/.claude/skills/proofread-ai-slop/detect.py {doc_path}
 ## 자체검사
 
 ```bash
-python3 ~/.claude/skills/proofread-ai-slop/detect.py --selftest
+python3 "<base directory>/detect.py" --selftest
 ```
 
 slop 픽스처와 사람 문체 픽스처의 플래그 수를 대조한다. 지표를 추가하거나 수정하면 이 검사를 먼저 통과시킨다.

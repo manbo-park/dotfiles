@@ -205,19 +205,7 @@ check_deps() {
     Linux)  check_deps_linux ;;
     *)      die "지원하지 않는 플랫폼입니다: $(uname -s)" ;;
   esac
-
-  # TOML 변환: dasel 또는 python3(tomllib/tomli_w) — 배포판마다 패키지명이 갈려 자동 설치는 하지 않는다.
-  if ! command -v dasel &>/dev/null; then
-    if ! command -v python3 &>/dev/null; then
-      die "TOML 변환을 위해 'dasel' 또는 'python3'(tomllib/tomli_w) 가 필요합니다."
-    fi
-  fi
 }
 
 # ── 플랫폼 판별 ───────────────────────────────────────────────────────────────
 is_macos() { [[ "$(uname -s)" == "Darwin" ]]; }
-
-# ── PCFG 마커 ─────────────────────────────────────────────────────────────────
-# 생성 파일·merge 블록 식별용 마커 문자열
-pcfg_marker_begin() { echo "# >>> pcfg:${1} >>>"; }
-pcfg_marker_end()   { echo "# <<< pcfg:${1} <<<"; }
