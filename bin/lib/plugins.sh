@@ -8,6 +8,7 @@
 #   {
 #     "claude": { "marketplace": "<name>", "source": "<github-repo-or-url>" }
 #   }
+#   source 가 "./" 로 시작하면 저장소 루트 기준 로컬 마켓플레이스 경로로 본다.
 #   해당 에이전트 키가 없으면 그 에이전트 설치는 건너뛴다.
 #   동일 플러그인을 여러 에이전트에 설치하려면 키를 여러 개 둔다.
 #
@@ -50,6 +51,8 @@ _plugin_install_claude() {
     log_warn "plugins/${name}/claude — marketplace/source 가 정의되지 않았습니다."
     return
   fi
+  # 로컬 마켓플레이스: 기기마다 저장소 위치가 달라 절대 경로를 정의에 적을 수 없다
+  [[ "$src" == ./* ]] && src="${REPO_ROOT}/${src#./}"
 
   _plugin_ensure_marketplace_claude "$mk" "$src"
 
