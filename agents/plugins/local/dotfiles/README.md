@@ -14,7 +14,7 @@ dotfiles에서 관리하는 자작 Claude Code 스킬·훅 모음 (로컬 마켓
 pcfg install plugins dotfiles
 ```
 
-설치 후 Claude Code를 재시작한다. 원본을 고친 뒤에는 `/plugin marketplace update dotfiles-local` 후 `/plugin update dotfiles@dotfiles-local`.
+설치 후 Claude Code를 재시작한다. 플러그인은 저장소 원본에서 읽히므로 고친 뒤에도 재시작하면 된다. 반영되지 않으면 `/plugin marketplace update dotfiles-local` 후 `/plugin update dotfiles@dotfiles-local`.
 
 ## 요구 사항
 

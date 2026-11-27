@@ -1,6 +1,6 @@
 # dotfiles
 
-Claude Code의 rules·skills·hooks·mcps·plugins·settings 설정과
+Claude Code의 rules·mcps·plugins·settings 설정과 자작 플러그인(스킬·훅),
 tmux·zsh·ghostty 등 프로그램 설정 파일, 개발 폰트를 한곳에서 버전 관리하는 dotfiles 저장소입니다.
 
 ## 의존성
@@ -18,7 +18,7 @@ macOS는 Homebrew, Linux/WSL은 apt(+ 일부 gem/git clone/공식 설치 스크�
 | `git` | zsh 플러그인 clone (fzf-tab 등) | 기본 포함 | `apt install git` |
 | `gh` | GitHub CLI (PR·이슈 작업) | `brew install gh` | GitHub 공식 apt 저장소 (자동 등록) |
 | `node` | 에이전트 플러그인 훅 실행 (ponytail 등) | `brew install node` | `apt install nodejs` |
-| `python3` | 로컬 플러그인 훅 실행 (dotfiles 플러그인) | 시스템 python3 | `apt install python3` (기본 포함인 경우 많음) |
+| `python3` | dotfiles 플러그인 훅 실행 (retitle) | 시스템 python3 | `apt install python3` (기본 포함인 경우 많음) |
 
 ### WSL 관련 참고사항
 
@@ -51,10 +51,8 @@ dotfiles/
 │   └── lib/          # 내부 라이브러리
 ├── agents/
 │   ├── rules/        # <name>.md
-│   ├── skills/       # <name>/ (디렉토리)
-│   ├── hooks/        # <name>/ (hook.json + scripts)
 │   ├── mcps/         # <name>.json
-│   ├── plugins/      # <name>.json (마켓플레이스 정의), local/ (로컬 마켓플레이스)
+│   ├── plugins/      # <name>.json (마켓플레이스 정의), local/dotfiles/ (자작 스킬·훅 플러그인)
 │   └── settings/     # <key>.json (settings.json 최상위 키 = 파일명, 값 = 내용)
 ├── configs/
 │   ├── tmux/         # tmux.conf + manifest
@@ -94,7 +92,7 @@ pcfg rename    <type> <old> <new>
 pcfg doctor    [--prune]
 ```
 
-`<type>`: `skills` | `rules` | `hooks` | `mcps` | `plugins` | `settings` | `configs` | `fonts` | `all` (생략 시 `all`)
+`<type>`: `rules` | `mcps` | `plugins` | `settings` | `configs` | `fonts` | `all` (생략 시 `all`)
 
 ### 예시
 
@@ -118,7 +116,7 @@ pcfg install fonts firacode
 pcfg uninstall all --prune --restore
 
 # 이름 변경 (git mv + renames.tsv 기록)
-pcfg rename skills old-skill new-skill
+pcfg rename rules old-rule new-rule
 
 # 끊어진 링크 점검 및 정리
 pcfg doctor --prune
@@ -129,8 +127,6 @@ pcfg doctor --prune
 | type | 방식 | 대상 |
 |------|------|------|
 | rules | symlink | `~/.claude/rules/<name>.md` |
-| skills | symlink | `~/.claude/skills/<name>` |
-| hooks | JSON merge | `~/.claude/settings.json` 의 `hooks` 키 |
 | mcps | JSON merge | `~/.claude.json` 의 `mcpServers` 키 |
 | plugins | `claude plugin install` | — |
 | settings | JSON merge | `~/.claude/settings.json` 최상위 키 |
@@ -138,7 +134,7 @@ pcfg doctor --prune
 ## settings JSON 형식
 
 `agents/settings/<key>.json` 의 **파일명이 `~/.claude/settings.json` 의 최상위 키**, **파일 내용이 그 값**입니다.
-기존 사용자 설정과 `hooks`/`mcps` merge 결과는 그대로 보존됩니다.
+기존 사용자 설정은 그대로 보존됩니다.
 
 ```
 agents/settings/includeCoAuthoredBy.json   # 내용: false
@@ -199,14 +195,18 @@ PR 본문의 생성 안내 문구를 제거합니다.
 | `marketplace` | `plugin@marketplace` 형식에 쓰는 마켓플레이스 이름 |
 | `source` | 마켓플레이스를 등록할 GitHub repo 또는 URL (`claude plugin marketplace add <source>`). `./`로 시작하면 저장소 루트 기준 로컬 경로 |
 
-### 로컬 플러그인
+### 자작 플러그인 (dotfiles)
 
-직접 만든 플러그인은 `agents/plugins/local/`(마켓플레이스 `dotfiles-local`)에 두고, 정의 파일의
-`source`를 `"./agents/plugins/local"`로 적습니다. 훅·스크립트와 묶여 동작하는 것만 플러그인으로
-만들고, 단독으로 동작하는 스킬은 `agents/skills/`에 둡니다(symlink라 수정이 즉시 반영됨).
+직접 만든 스킬·훅은 모두 `agents/plugins/local/dotfiles/` 플러그인에 둡니다. 플러그인에 담을 수
+없는 rules·settings만 pcfg가 직접 설치합니다.
 
-원본을 고친 뒤에는 `/plugin marketplace update dotfiles-local` 후
-`/plugin update <plugin>@dotfiles-local`로 반영합니다.
+- 스킬: `skills/<name>/SKILL.md` (자동완성에는 `/dotfiles:<name>`으로 표시)
+- 훅: `hooks/hooks.json` (스크립트 경로는 `${CLAUDE_PLUGIN_ROOT}` 기준)
+
+마켓플레이스 `dotfiles-local`은 저장소 경로(`agents/plugins/local`)로 등록되며, 정의 파일
+`agents/plugins/dotfiles.json`의 `source`가 `"./agents/plugins/local"`입니다. 플러그인은 저장소
+원본에서 읽히므로 스킬을 고치거나 추가한 뒤 Claude Code를 재시작하면 됩니다. 반영되지 않으면
+`/plugin marketplace update dotfiles-local` 후 `/plugin update dotfiles@dotfiles-local`을 실행합니다.
 
 설치 시 마켓플레이스가 없으면 자동 등록한 뒤 플러그인을 설치하며, 이미 설치돼 있으면
 건너뜁니다(멱등). 설치 상태의 진실원은 에이전트 CLI가 보유하므로 `state.tsv`에는 기록하지
