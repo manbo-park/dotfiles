@@ -1,6 +1,6 @@
 # dotfiles
 
-AI 코딩 에이전트(Claude Code / Cursor / Codex)의 rules·skills·hooks·mcps·plugins 설정과
+Claude Code의 rules·skills·hooks·mcps·plugins·settings 설정과
 tmux·zsh·ghostty 등 프로그램 설정 파일, 개발 폰트를 한곳에서 버전 관리하는 dotfiles 저장소입니다.
 
 ## 의존성
@@ -13,14 +13,11 @@ macOS는 Homebrew, Linux/WSL은 apt(+ 일부 gem/git clone/공식 설치 스크�
 |------|------|-------|-------------|
 | `bash` 4+ | 스크립트 실행 | `brew install bash` | 배포판 기본 포함 |
 | `jq` | JSON merge/remove | `brew install jq` | `apt install jq` |
-| `dasel` 또는 `python3` | TOML 변환 (codex mcps) | `brew install dasel` 또는 시스템 python3 | `apt install python3` (기본 포함인 경우 많음) |
 | `curl` | 폰트 zip 다운로드 | 기본 포함 | `apt install curl` |
 | `unzip` | 폰트 zip 압축 해제 | 기본 포함 | `apt install unzip` |
 | `git` | zsh 플러그인 clone (fzf-tab 등) | 기본 포함 | `apt install git` |
 | `gh` | GitHub CLI (PR·이슈 작업) | `brew install gh` | GitHub 공식 apt 저장소 (자동 등록) |
 | `node` | 에이전트 플러그인 훅 실행 (ponytail 등) | `brew install node` | `apt install nodejs` |
-
-> python3 사용 시 별도 패키지 설치 없이 내장 방식으로 변환합니다.
 
 ### WSL 관련 참고사항
 
@@ -55,8 +52,8 @@ dotfiles/
 │   ├── rules/        # <name>.md
 │   ├── skills/       # <name>/ (디렉토리)
 │   ├── hooks/        # <name>/ (hook.json + scripts)
-│   ├── mcps/         # <name>.json [, <name>.skip]
-│   ├── plugins/      # <name>.json (에이전트별 마켓플레이스 정의)
+│   ├── mcps/         # <name>.json
+│   ├── plugins/      # <name>.json (마켓플레이스 정의)
 │   └── settings/     # <key>.json (settings.json 최상위 키 = 파일명, 값 = 내용)
 ├── configs/
 │   ├── tmux/         # tmux.conf + manifest
@@ -88,9 +85,9 @@ pcfg list
 ## CLI 사용법
 
 ```
-pcfg install   [<type>] [<name>] [--agent <claude|cursor|codex|all>] [--force] [--dry-run]
-pcfg uninstall [<type>] [<name>] [--agent ...] [--restore] [--prune] [--dry-run]
-pcfg list      [<type>] [--agent ...]
+pcfg install   [<type>] [<name>] [--force] [--dry-run]
+pcfg uninstall [<type>] [<name>] [--restore] [--prune] [--dry-run]
+pcfg list      [<type>]
 pcfg status
 pcfg rename    <type> <old> <new>
 pcfg doctor    [--prune]
@@ -101,10 +98,7 @@ pcfg doctor    [--prune]
 ### 예시
 
 ```bash
-# mcps 전체를 Codex에만 설치
-pcfg install mcps --agent codex
-
-# 단일 rule을 지원 에이전트 전부에 설치
+# 단일 rule 설치
 pcfg install rules my-rule
 
 # 단일 config 설치
@@ -129,20 +123,16 @@ pcfg rename skills old-skill new-skill
 pcfg doctor --prune
 ```
 
-## 지원 매트릭스
+## 설치 방식
 
-| type    | Claude Code | Cursor | Codex |
-|---------|-------------|--------|-------|
-| rules   | ✓ symlink   | ✓ .mdc 변환 | ✓ AGENTS.md 섹션 |
-| skills  | ✓ symlink   | ✓ symlink   | ✗ 미지원 |
-| hooks   | ✓ JSON merge | ✓ JSON merge | ✗ 미지원 |
-| mcps    | ✓ JSON merge (`~/.claude.json`) | ✓ JSON merge (`~/.cursor/mcp.json`) | ✓ TOML merge¹ |
-| plugins | ✓ `claude plugin install`² | ✗ 미지원 | ✗ 미지원 |
-| settings | ✓ JSON merge (`~/.claude/settings.json` 최상위) | ✗ 미지원 | ✗ 미지원 |
-
-> ¹ Codex는 stdio 방식(`command`/`args`)만 지원합니다. 원격 http 방식의 MCP는 `<name>.skip` 파일에 `codex`를 명시해 제외하세요.
->
-> ² 현재는 Claude Code만 지원합니다. 정의 형식은 에이전트별 키 구조라 추후 다른 에이전트 확장과 동일 플러그인의 다중 에이전트 설치를 수용합니다.
+| type | 방식 | 대상 |
+|------|------|------|
+| rules | symlink | `~/.claude/rules/<name>.md` |
+| skills | symlink | `~/.claude/skills/<name>` |
+| hooks | JSON merge | `~/.claude/settings.json` 의 `hooks` 키 |
+| mcps | JSON merge | `~/.claude.json` 의 `mcpServers` 키 |
+| plugins | `claude plugin install` | — |
+| settings | JSON merge | `~/.claude/settings.json` 최상위 키 |
 
 ## settings JSON 형식
 
@@ -189,20 +179,10 @@ PR 본문의 생성 안내 문구를 제거합니다.
 현재 환경 또는 `~/.zshenv.local` 중 하나에 정의되어 있으면 경고는 생략됩니다.
 실제 값은 파일에 포함하지 않습니다.
 
-### 에이전트 제외 (.skip)
-
-특정 MCP를 일부 에이전트에서 제외하려면 같은 이름의 `.skip` 파일을 추가합니다:
-
-```
-agents/mcps/<name>.skip   # 내용: codex
-```
-
-`.skip` 파일에는 제외할 에이전트 이름을 한 줄에 하나씩 작성합니다 (`claude` / `cursor` / `codex`).
-
 ## plugins JSON 형식
 
 각 `agents/plugins/<plugin>.json` 파일에 플러그인의 마켓플레이스 정보를 작성합니다.
-파일명이 플러그인 ID이며, 에이전트별 키 아래에 그 에이전트용 설치 정보를 둡니다.
+파일명이 플러그인 ID이며, `claude` 키 아래에 설치 정보를 둡니다.
 
 ```json
 {
@@ -215,13 +195,12 @@ agents/mcps/<name>.skip   # 내용: codex
 
 | 필드 | 설명 |
 |------|------|
-| `<agent>` | 에이전트 키 (`claude` 등). 키가 없는 에이전트는 설치를 건너뜁니다 |
 | `marketplace` | `plugin@marketplace` 형식에 쓰는 마켓플레이스 이름 |
 | `source` | 마켓플레이스를 등록할 GitHub repo 또는 URL (`claude plugin marketplace add <source>`) |
 
 설치 시 마켓플레이스가 없으면 자동 등록한 뒤 플러그인을 설치하며, 이미 설치돼 있으면
 건너뜁니다(멱등). 설치 상태의 진실원은 에이전트 CLI가 보유하므로 `state.tsv`에는 기록하지
-않습니다. 동일 플러그인을 여러 에이전트에 설치하려면 키를 여러 개 둡니다.
+않습니다.
 
 ## fonts source.json 형식
 
@@ -258,10 +237,7 @@ tmux.conf        ~/.config/tmux/tmux.conf
 ## 설치 동작
 
 - **symlink**: 이미 올바른 symlink면 no-op(멱등). 기존 파일은 `.pcfg-bak.<ts>` 백업.
-- **변환(rules-cursor)**: `.md` → frontmatter 래핑 `.mdc` 생성. pcfg 마커로 식별.
 - **merge**: `jq` 로 해당 키만 삽입. 제거 시 그 키만 삭제.
-- **merge-section(rules-codex)**: `# >>> pcfg:<name> >>>` ~ `# <<< pcfg:<name> <<<` 마커 블록.
-- **merge-toml(mcps-codex)**: `[mcp_servers.<name>]` 섹션 삽입.
 - **font(fonts)**: 이미 설치된 경우 no-op(멱등). 캐시된 zip이 있으면 재사용, 없으면 다운로드 후 패턴 매칭된 파일을 시스템 폰트 디렉토리에 복사.
 
 설치 상태는 `~/.local/state/dotfiles/state.tsv` 에 기록됩니다.
