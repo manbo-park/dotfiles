@@ -8,6 +8,7 @@ alias gps='git push'
 alias gpso='git push origin'
 alias gs='git switch'
 alias mux='tmuxinator'
+alias ch='claude-history'
 
 # WSL: ssh-agent 자동 시작
 ## WSL은 터미널 세션이 끝나면 ssh-agent도 함께 죽는 경우가 많아,
