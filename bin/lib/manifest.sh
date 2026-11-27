@@ -66,21 +66,6 @@ list_agent_items() {
   done
 }
 
-# ── per-item 에이전트 제외 (.skip) ───────────────────────────────────────────
-# is_agent_skipped <type> <name> <agent>
-# agents/<type>/<name>.skip 파일에 해당 agent 가 있으면 0(참) 반환
-# 파일이 없으면 1(거짓) 반환
-is_agent_skipped() {
-  local type="$1" name="$2" agent="$3"
-  local skip_file="${REPO_ROOT}/agents/${type}/${name}.skip"
-  [[ -f "$skip_file" ]] || return 1
-  while IFS= read -r line; do
-    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-    [[ "$line" == "$agent" ]] && return 0
-  done < "$skip_file"
-  return 1
-}
-
 # ── configs 아이템 열거 ───────────────────────────────────────────────────────
 # list_config_items  → 프로그램 이름 목록
 list_config_items() {
@@ -143,27 +128,4 @@ configs_pairs() {
       printf '%s\t%s\n' "$abs_src" "$dest"
     fi
   done < <(parse_manifest "$mf")
-}
-
-# ── agents override manifest 파싱 ────────────────────────────────────────────
-# agents 아이템에 manifest 가 있으면 해당 항목은 registry 컨벤션 대신 manifest 값 사용
-# agent_manifest_dest <type> <name> <agent>
-# → manifest 에서 해당 agent 의 dest override 를 찾아 반환 (없으면 빈 문자열)
-# manifest 형식 (agents용, agent 컬럼 포함):
-#   <agent>  <source>  <destination>
-agent_manifest_dest() {
-  local type="$1" name="$2" agent="$3"
-  local mf="${REPO_ROOT}/agents/${type}/${name}/manifest"
-  [[ -f "$mf" ]] || { echo ""; return; }
-
-  while IFS= read -r line; do
-    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-    local ag src dest
-    read -r ag src dest <<< "$line"
-    if [[ "$ag" == "$agent" ]]; then
-      expand_path "$dest"
-      return
-    fi
-  done < "$mf"
-  echo ""
 }

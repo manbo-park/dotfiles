@@ -2,9 +2,9 @@
 # bin/pcfg — dotfiles 단일 진입 CLI
 #
 # 사용법:
-#   pcfg install   [<type>] [<name>] [--agent <agent>] [--force] [--dry-run]
-#   pcfg uninstall [<type>] [<name>] [--agent <agent>] [--restore] [--prune] [--dry-run]
-#   pcfg list      [<type>] [--agent <agent>]
+#   pcfg install   [<type>] [<name>] [--force] [--dry-run]
+#   pcfg uninstall [<type>] [<name>] [--restore] [--prune] [--dry-run]
+#   pcfg list      [<type>]
 #   pcfg status
 #   pcfg rename    <type> <old> <new>
 #   pcfg doctor    [--prune]
@@ -27,8 +27,6 @@ source "${LIB}/manifest.sh"
 source "${LIB}/state.sh"
 # shellcheck source=bin/lib/symlink.sh
 source "${LIB}/symlink.sh"
-# shellcheck source=bin/lib/convert.sh
-source "${LIB}/convert.sh"
 # shellcheck source=bin/lib/merge.sh
 source "${LIB}/merge.sh"
 # shellcheck source=bin/lib/fonts.sh
@@ -38,7 +36,6 @@ source "${LIB}/plugins.sh"
 
 # ── 공통 인자 파싱 헬퍼 ──────────────────────────────────────────────────────
 _parse_common_flags() {
-  OPT_AGENT="all"
   OPT_RESTORE=0
   OPT_PRUNE=0
   REMAINING_ARGS=()
@@ -46,8 +43,6 @@ _parse_common_flags() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --dry-run)   PCFG_DRY_RUN=1; shift ;;
-      --agent)     OPT_AGENT="${2:-all}"; shift 2 ;;
-      --agent=*)   OPT_AGENT="${1#*=}"; shift ;;
       --force)     shift ;;  # 미구현 (향후 확장용)
       --restore)   OPT_RESTORE=1; shift ;;
       --prune)     OPT_PRUNE=1; shift ;;
@@ -55,6 +50,10 @@ _parse_common_flags() {
     esac
   done
 }
+
+# ── 대상 에이전트 ─────────────────────────────────────────────────────────────
+# Claude Code 만 지원한다. state.tsv 의 agent 열은 기존 기록과 호환되게 유지한다.
+AGENT="claude"
 
 # ── type 목록 ─────────────────────────────────────────────────────────────────
 ALL_AGENT_TYPES="rules skills hooks mcps plugins settings"
@@ -87,7 +86,7 @@ cmd_install() {
     elif [[ "$type" == "fonts" ]]; then
       _install_fonts "$name_arg"
     else
-      _install_agent_type "$type" "$name_arg" "$OPT_AGENT"
+      _install_agent_type "$type" "$name_arg"
     fi
   done
 }
@@ -112,7 +111,7 @@ _warn_mcp_missing_env() {
 }
 
 _install_agent_type() {
-  local type="$1" name_arg="$2" agent_arg="$3"
+  local type="$1" name_arg="$2"
   local names
   if [[ -n "$name_arg" ]]; then
     names="$name_arg"
@@ -123,16 +122,8 @@ _install_agent_type() {
   [[ -z "$names" ]] && { log_info "설치할 ${type} 아이템이 없습니다."; return; }
 
   for name in $names; do
-    local agents; agents="$(resolve_agents "$type" "$agent_arg")"
-    [[ -z "$agents" ]] && continue
-    for agent in $agents; do
-      if is_agent_skipped "$type" "$name" "$agent"; then
-        log_skip "${type}/${name}/${agent} — ${name}.skip 에 의해 제외됨"
-        continue
-      fi
-      _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
-        _install_one "$type" "$agent" "$name"
-    done
+    _CURRENT_TYPE="$type" _CURRENT_AGENT="$AGENT" \
+      _install_one "$type" "$AGENT" "$name"
     if [[ "$type" == "mcps" ]]; then
       _warn_mcp_missing_env "$name" "${REPO_ROOT}/agents/mcps/${name}.json"
     fi
@@ -154,27 +145,11 @@ _install_one() {
       [[ "$type" == "rules" ]] && actual_src="${src}.md"
       symlink_install "$type" "$agent" "$name" "$actual_src" "$dest"
       ;;
-    convert)
-      convert_to_mdc "${src}.md" "$dest" "$name"
-      ;;
-    merge-section)
-      merge_agents_section "$dest" "${src}.md" "$name"
-      ;;
     merge)
       local top_key; top_key="$(target_merge_key "$type" "$agent")"
       local frag="${src}.json"
       _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
         json_merge "$dest" "$top_key" "$name" "$frag"
-      ;;
-    merge-env)
-      # ${VAR} → ${env:VAR} 로 변환 후 merge (VSCode mcp.json 형식)
-      local top_key; top_key="$(target_merge_key "$type" "$agent")"
-      local transformed; transformed="$(sed 's/\${\([A-Za-z_][A-Za-z0-9_]*\)}/\${env:\1}/g' "${src}.json")"
-      _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
-        json_merge "$dest" "$top_key" "$name" "$transformed"
-      ;;
-    merge-toml)
-      toml_merge_mcp "$dest" "$name" "${src}.json"
       ;;
     plugin)
       plugin_install "$agent" "$name"
@@ -224,17 +199,17 @@ cmd_uninstall() {
     elif [[ "$type" == "fonts" ]]; then
       _uninstall_fonts "$name_arg" "$restore_flag"
     else
-      _uninstall_agent_type "$type" "$name_arg" "$OPT_AGENT" "$restore_flag"
+      _uninstall_agent_type "$type" "$name_arg" "$restore_flag"
     fi
   done
 
   if [[ "$OPT_PRUNE" == 1 ]]; then
-    _prune_renames "$type_arg" "$OPT_AGENT" "$restore_flag"
+    _prune_renames "$type_arg" "$restore_flag"
   fi
 }
 
 _uninstall_agent_type() {
-  local type="$1" name_arg="$2" agent_arg="$3" restore_flag="$4"
+  local type="$1" name_arg="$2" restore_flag="$3"
   local names
   if [[ -n "$name_arg" ]]; then
     names="$name_arg"
@@ -245,12 +220,8 @@ _uninstall_agent_type() {
   [[ -z "$names" ]] && return
 
   for name in $names; do
-    local agents; agents="$(resolve_agents "$type" "$agent_arg")"
-    [[ -z "$agents" ]] && continue
-    for agent in $agents; do
-      _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
-        _uninstall_one "$type" "$agent" "$name" "$restore_flag"
-    done
+    _CURRENT_TYPE="$type" _CURRENT_AGENT="$AGENT" \
+      _uninstall_one "$type" "$AGENT" "$name" "$restore_flag"
   done
 }
 
@@ -265,19 +236,10 @@ _uninstall_one() {
     symlink)
       symlink_uninstall "$type" "$agent" "$name" "$dest" "$restore_flag"
       ;;
-    convert)
-      remove_mdc "$dest" "$name" "$restore_flag"
-      ;;
-    merge-section)
-      remove_agents_section "$dest" "$name"
-      ;;
-    merge|merge-env)
+    merge)
       local top_key; top_key="$(target_merge_key "$type" "$agent")"
       _CURRENT_TYPE="$type" _CURRENT_AGENT="$agent" \
         json_remove "$dest" "$top_key" "$name" "$restore_flag"
-      ;;
-    merge-toml)
-      toml_remove_mcp "$dest" "$name" "$restore_flag"
       ;;
     plugin)
       plugin_uninstall "$agent" "$name" "$restore_flag"
@@ -310,7 +272,7 @@ _uninstall_configs() {
 
 # ── prune (이름변경 잔재 제거) ────────────────────────────────────────────────
 _prune_renames() {
-  local type_filter="$1" agent_arg="$2" restore_flag="$3"
+  local type_filter="$1" restore_flag="$2"
 
   while IFS=$'\t' read -r rtype old_name _new _date _note; do
     [[ -z "$rtype" ]] && continue
@@ -318,13 +280,8 @@ _prune_renames() {
       continue
     fi
 
-    local agents; agents="$(resolve_agents "$rtype" "$agent_arg")"
-    [[ -z "$agents" ]] && continue
-
-    for agent in $agents; do
-      _CURRENT_TYPE="$rtype" _CURRENT_AGENT="$agent" \
-        _uninstall_one "$rtype" "$agent" "$old_name" "$restore_flag"
-    done
+    _CURRENT_TYPE="$rtype" _CURRENT_AGENT="$AGENT" \
+      _uninstall_one "$rtype" "$AGENT" "$old_name" "$restore_flag"
   done < <(renames_query "${type_filter}" 2>/dev/null || true)
 }
 
@@ -356,17 +313,12 @@ cmd_list() {
       done
     else
       list_agent_items "$type" | while read -r name; do
-        local agents; agents="$(resolve_agents "$type" "$OPT_AGENT")"
-        local row="  ${name}"
-        for agent in $agents; do
-          local dest; dest="$(target_dest "$type" "$agent" "$name")"
-          if _is_installed "$type" "$agent" "$name" "$dest"; then
-            row+="  ${_GRN}[${agent}:✓]${_RST}"
-          else
-            row+="  ${_RED}[${agent}:✗]${_RST}"
-          fi
-        done
-        printf '%b\n' "$row"
+        local dest; dest="$(target_dest "$type" "$AGENT" "$name")"
+        if _is_installed "$type" "$AGENT" "$name" "$dest"; then
+          printf '  %s  %s[✓]%s\n' "$name" "$_GRN" "$_RST"
+        else
+          printf '  %s  %s[✗]%s\n' "$name" "$_RED" "$_RST"
+        fi
       done
     fi
   done
@@ -380,13 +332,7 @@ _is_installed() {
     symlink)
       [[ -L "$dest" && "$(readlink "$dest")" == "${REPO_ROOT}"* ]]
       ;;
-    convert)
-      [[ -f "$dest" ]] && grep -q "$(pcfg_marker_begin "$name")" "$dest" 2>/dev/null
-      ;;
-    merge-section)
-      [[ -f "$dest" ]] && grep -qF "$(pcfg_marker_begin "$name")" "$dest" 2>/dev/null
-      ;;
-    merge|merge-env|merge-toml)
+    merge)
       state_query "$type" "$agent" "$name" 2>/dev/null | grep -q .
       ;;
     plugin)
@@ -411,7 +357,7 @@ cmd_status() {
           ((found++)) || true
         fi
         ;;
-      convert|merge-section|font)
+      font)
         if [[ ! -f "$dest" ]]; then
           log_warn "파일 없음: ${dest} (${type}/${agent}/${name})"
           ((found++)) || true
@@ -473,7 +419,7 @@ cmd_doctor() {
         symlink)
           [[ -L "$dest" && "$(readlink "$dest" 2>/dev/null)" == "${REPO_ROOT}"* ]] || keep=0
           ;;
-        convert|merge-section|font)
+        font)
           [[ -f "$dest" ]] || keep=0
           ;;
       esac
@@ -493,9 +439,9 @@ cmd_doctor() {
 usage() {
   cat >&2 <<'EOF'
 사용법:
-  pcfg install   [<type>] [<name>] [--agent <claude|cursor|codex|vscode|all>] [--force] [--dry-run]
-  pcfg uninstall [<type>] [<name>] [--agent ...] [--restore] [--prune] [--dry-run]
-  pcfg list      [<type>] [--agent ...]
+  pcfg install   [<type>] [<name>] [--force] [--dry-run]
+  pcfg uninstall [<type>] [<name>] [--restore] [--prune] [--dry-run]
+  pcfg list      [<type>]
   pcfg status
   pcfg rename    <type> <old> <new>
   pcfg doctor    [--prune]
